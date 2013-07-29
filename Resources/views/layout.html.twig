@@ -10,12 +10,20 @@
         {% endblock %}
 
         {% block javascripts %}
+            <script type="text/javascript" src="/js/jquery-1.10.1.min.js"></script>
             <script type="text/javascript" src="{{ asset('bundles/artseldopeninviter/js/common.js') }}"></script>
         {% endblock %}
 
         <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
     </head>
-    <body>
+    <body style="background:url({{ asset('images/inviter/QUB_Invite_BackgroundGRAD.jpg') }}) no-repeat;background-size:cover;">
+    
+    <!--Logo-->
+    <div class="grid_9 alignleft alpha" style="position:relative; top:15px; left:20px; padding-bottom:15px;">  
+       <a href="{{path('page_homepage')}}"><img src="{{ asset('images/inviter/QUB_InviteEngineLogo.png') }}" width="300" height="90" alt="temp logo"/></a>
+    </div>
+    <!--End Logo-->
+    
         {% if app.session.hasFlash('artseld_openinviter.notification.success') %}
         <div class="artseld_openinviter_notification success">
             {{ app.session.flash('artseld_openinviter.notification.success')|trans }}
@@ -27,8 +35,10 @@
         </div>
         {% endif %}
         {% block content '' %}
-        <div id="artseld_openinviter_copyright"><a href='http://openinviter.com/'>
+      {#  <div id="artseld_openinviter_copyright"><a href='http://openinviter.com/'>
             <img src='http://openinviter.com/images/banners/banner_blue_1.gif?nr=69900' border='0' alt='Powered by OpenInviter.com' title='Powered by OpenInviter.com'>
-        </a></div>
+        </a></div> #}
+        
+        
     </body>
 </html>

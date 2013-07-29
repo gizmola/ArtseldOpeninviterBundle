@@ -15,3 +15,63 @@ artseld_openinviter_done:
     defaults: { _controller: ArtseldOpeninviterBundle:Default:done }
     #requirements:
     #    _method:  POST
+
+artseld_openinviter_fb:
+    pattern: /facebook/
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:facebook }
+    #requirements:
+    #    _method:  POST
+    
+artseld_openinviter_twt:
+    pattern: /twitter/
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:twitter }
+    #requirements:
+    #    _method:  POST    
+
+artseld_openinviter_twtp:
+    pattern: /twitter/{twt}
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:twitter }
+    requirements:
+    #    _method:  POST     
+
+artseld_openinviter_linkedin:
+    pattern: /linkedin/
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:linkedin }
+    #requirements:
+    #    _method:  POST  
+        
+artseld_openinviter_linkedincb:
+    pattern: /linkedin/{lcb}
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:linkedin }
+    requirements:
+    #    _method:  POST 
+
+artseld_openinviter_live:
+    pattern: /live/
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:live }
+    requirements:
+    #    _method:  POST  
+    
+artseld_openinviter_livecb:
+    pattern: /live/{lcb}
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:live }
+    requirements:
+    #    _method:  POST    
+    
+artseld_openinviter_yahoo:
+    pattern: /yahoo/
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:yahoo }
+    requirements:
+    #    _method:  POST  
+    
+artseld_openinviter_yahoocb:
+    pattern: /yahoo/{ycb}
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:yahoo }
+    requirements:
+    #    _method:  POST  
+    
+artseld_openinviter_gmail:
+    pattern: /gmail/
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:gmail }
+    requirements:
+    #    _method:  POST               

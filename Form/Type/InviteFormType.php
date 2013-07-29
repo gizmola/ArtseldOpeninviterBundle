@@ -26,13 +26,15 @@ class InviteFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('message', 'textarea', array(
-                'required' => true,
-                'label' => 'artseld_openinviter.label.message',
-            ))
+           // ->add('message', 'textarea', array(
+               // 'required' => true,
+               // //'label' => 'artseld_openinviter.label.message',
+            	//'label' => 'Message',
+           // ))
             ->add('email', 'choice', array(
                 'required' => true,
-                'label' => 'artseld_openinviter.label.recipients',
+                //'label' => 'artseld_openinviter.label.recipients',
+            	'label' => 'Recipients',
                 'multiple' => true,
                 'expanded' => true,
                 'choices' => $this->getRecipientsChoices(),

@@ -4,11 +4,23 @@
 {% block content %}
     <form class="artseld_openinviter_form" id="artseld_openinviter_invite_form" action="{{ path('artseld_openinviter_invite') }}" method="post" {{ form_enctype(invite_form) }}>
     {{ form_errors(invite_form) }}
-    {{ form_row(invite_form.message) }}
-    <div><input type="submit" value="{{ 'artseld_openinviter.action.send'|trans }}" /></div>
-    <div><label for="toggle_all_checkbox">{{ 'artseld_openinviter.action.toggle_select'|trans }}<input type="checkbox" onchange='toggleAll(this)' id="toggle_all_checkbox" name='toggle_all' title='{{ 'artseld_openinviter.action.toggle_select'|trans }}' /></label></div>
+  {#  {{ form_row(invite_form.message) }} #}
+    {# <div><input type="submit" value="{{ 'artseld_openinviter.action.send'|trans }}" /></div> #}
+    <div><input type="submit" value="{{ 'Send'|trans }}" /></div>
+    <div>
+        {# <label for="toggle_all_checkbox">{{ 'artseld_openinviter.action.toggle_select'|trans }} #}
+        <label for="toggle_all_checkbox">{{ 'Toggle Select All'|trans }}
+        <input type="checkbox" onchange='toggleAll(this)' id="toggle_all_checkbox" name='toggle_all' title='{{ 'artseld_openinviter.action.toggle_select'|trans }}' />
+        </label>
+    </div>
     {{ form_row(invite_form.email) }}
     {{ form_rest(invite_form) }}
-    <div><input type="submit" value="{{ 'artseld_openinviter.action.send'|trans }}" /></div>
+   {#  <div><input type="submit" value="{{ 'artseld_openinviter.action.send'|trans }}" /></div> #}
+    <div><input type="submit" value="{{ 'Send'|trans }}" /></div>
     </form>
+    <script>
+       $(window).load(function () {
+             $('input[type=checkbox]').attr('checked',true);
+        });
+    </script>
 {% endblock %}
