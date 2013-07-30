@@ -1,3 +1,4 @@
+
 <?php
 
 /*
@@ -31,7 +32,7 @@ use Qubeey\ApiBundle\Entity\Member;
 use Qubeey\ApiBundle\Document\MemberInviter;
 use Qubeey\ApiBundle\Utility\Facebook;
 use TwitterOAuth\Api;
-
+use Qubeey\ApiBundle\Utility\LinkedIn;
 //use Artseld\OpeninviterBundle\Utility\YahooOAuth\OAuth\Globals;
 use Qubeey\ApiBundle\Utility\YahooOAuth\OAuth\Globals;
 
@@ -91,34 +92,38 @@ class DefaultController extends Controller
     
     	$response = new Response();
     	$session = $request->getSession();
-   
+    
     	$mt = microtime();
     	$rand = mt_rand();
-    	$url = "https://api.login.yahoo.com/oauth/v2/get_request_token?";
-    	$oauth_consumer_key = rawurlencode('dj0yJmk9czE4SDBUTmk0em5kJmQ9WVdrOVZIcGFOR00zTXpnbWNHbzlNQS0tJnM9Y29uc3VtZXJzZWNyZXQmeD1hMA--');
-    	$oauth_secret_key = 'fa414608a6389da9e93e2e14a9ba21d03510a659';
     	
-    	
+    	$oauth_consumer_key = rawurlencode($this->container->getParameter('YAHOO_API_KEY'));
+    	$oauth_secret_key = $this->container->getParameter('YAHOO_API_SECRET');
+    	 	
 		$oauthcallback = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_yahoo')."LST";
-    	$oauth_callback = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_yahoo')."LSTC";
-    	//$oauth_callback = str_replace( "&amp;", "&", urldecode(trim($oauth_callback)) );
-    	$u_agent = $_SERVER['HTTP_USER_AGENT'];
+    	
     	$yahooapi = new Globals();
     	//print_r($yahooapi);    	
     	//die();
 
     	//////////////////////////////////////////////////////////////////////////////
     	if(isset($ycb) && $ycb == 'LST'){
+    		
     		$getaccesstoken = $yahooapi->get_access_token($oauth_consumer_key, $oauth_secret_key, $_SESSION['oauth_requesttoken'], $_SESSION['oauth_requesttoken_secret'], $_GET['oauth_verifier'], false, true, true);
     		
     		if (! empty($getaccesstoken)) {
 	    		list($info2, $headers2, $body2, $body_parsed2) = $getaccesstoken;
+
 	    		if ($info2['http_code'] == 200 && !empty($body2)) {
+
 	    			$_SESSION['oauth_accesstoken'] = $body_parsed2['oauth_token'];
 	    			$_SESSION['oauth_accesstoken_secret'] = $body_parsed2['oauth_token_secret'];
+	    
 	    			$_SESSION['oauth_session_handle'] = $body_parsed2['oauth_session_handle'];
 	    			$_SESSION['xoauth_yahoo_guid'] = $body_parsed2['xoauth_yahoo_guid'];
-
+	    
+	    			//print_r($_SESSION);	    
+	    			//die();
+	    			
 	    			/*
 	    			//$querynum = 1 (Show my profile)
     				//$querynum = 2 (Find my friends)
@@ -128,8 +133,6 @@ class DefaultController extends Controller
 	    			print_r($callyql);
 	    			die();
 					*/
-	    			
-	    			//$callcontacts =  $yahooapi->callcontact($oauth_consumer_key, $oauth_secret_key, $_SESSION['xoauth_yahoo_guid'], $_SESSION['oauth_accesstoken'], $_SESSION['oauth_accesstoken_secret'], false, true);
 	    			$callcontacts =  $yahooapi->callcontact($oauth_consumer_key, $oauth_secret_key, $_SESSION['xoauth_yahoo_guid'], rawurldecode($body_parsed2['oauth_token']), rawurldecode($body_parsed2['oauth_token_secret']), false, true);
 	    			
 	    			list($info3, $headers3, $body3) = $callcontacts;
@@ -165,19 +168,6 @@ class DefaultController extends Controller
 	    	  }    
     	  }
     
-    			//die();
-    			/*
-    			//$querynum = 1 (Show my profile)
-    			//$querynum = 2 (Find my friends)
-    			//$querynum = 3 (Find my contacts)
-    			$querynum = 3;    
-    			$callyql = $yahooapi->call_yql($oauth_consumer_key, $oauth_secret_key, $querynum, $body_parsed2['oauth_accesstoken'], $body_parsed2['oauth_accesstoken_secret'], false, true,$oauth_callback);
-    			print_r($callyql);
-    			die();
-    			*/
-    
-    
-    
     }
     
     //////////////////////////////////////////////////////////////////////////////
@@ -203,32 +193,27 @@ class DefaultController extends Controller
 	    			$params = array(
 	    					'oauth_token' => $body_parsed['oauth_token'],
 	    					'oauth_token_secret' => $body_parsed['oauth_token_secret'],
-	    			//'oauth_callback_confirmed' => $body_parsed['oauth_callback_confirmed'],
-	    			//'oauth_callback' => $oauthcallback,
 	    			);
 	    
 	    			// Authentication request
 	    			$url2 = 'https://api.login.yahoo.com/oauth/v2/request_auth?' . http_build_query($params);
-	    			//echo $url2;
-	    			//echo "<br/><br/>";
-	    			//die();
-	    
 	    			// Redirect user to authenticate
 	    			header("Location: $url2");
 	    			die();
-	    
+	    			
+	    			/*
 	    			//$url = 'https://api.login.yahoo.com/oauth/v2/request_auth?oauth_token='.$body_parsed['oauth_token'];
 	    			$url = $this->rfc3986_decode($body_parsed['xoauth_request_auth_url']);  //same as above.
 	    			//echo $url;
 	    			header("Location: $url");
 	    			die();
+	    			*/
 	    
 	    }
     }
     
     
-    die();
-    
+    die();   
     
     return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
     
@@ -259,8 +244,11 @@ class DefaultController extends Controller
     	//print_r($response);
     	//echo "<br/><br/>";
     	
-    	$CLIENT_ID = '00000000480FD1C6';
-    	$CLIENT_SECRET = '5hwwDBF8OHU68RHxsE-ehvkUorbu9hRa';
+
+    	$CLIENT_ID = $this->container->getParameter('LIVE_API_KEY');
+    	$CLIENT_SECRET = $this->container->getParameter('LIVE_API_SECRET');
+    	$REDIRECT_URL = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_live')."LST";
+    	
     	$scope='wl.singin,wl.basic,wl.emails,wl.contacts_emails';
     	//$REDIRECT_URL = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_live')."LST";
     	$u_agent = $_SERVER['HTTP_USER_AGENT'];
@@ -397,71 +385,11 @@ class DefaultController extends Controller
 	    
 	    		}   echo "<br/>";
     		}
-		// ******************************************** //
-    		/*
-    		$url = "https://login.live.com/oauth20_token.srf?client_id=".$CLIENT_ID."&redirect_uri=".$REDIRECT_URL."&client_secret=".$CLIENT_SECRET."&code=".$_GET['code']."&grant_type=authorization_code";
-    		//$url = str_replace( "&amp;", "&", urldecode(trim($url)) );
-    		$ch = curl_init($url);
-    		curl_setopt($ch, CURLOPT_POST, 1);
-    		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www.form-urlencoded'));
-    		curl_setopt( $ch, CURLOPT_USERAGENT, $u_agent );
-    		curl_setopt($ch, CURLOPT_HEADER, 0);
-    		curl_setopt($ch, CURLOPT_VERBOSE,0);
-    		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-    		$output = curl_exec($ch);
-    
-    		echo $curl_errno = curl_errno($ch);
-    		echo $curl_error = curl_error($ch);
-    		curl_close($ch);
-    		print_r($output);
-    		*/
+
     		die();
     }
     		
-
-    		
-    		/*
-    		$client_id='00000000480FD1C6';
-    		$clientsecret = '5hwwDBF8OHU68RHxsE-ehvkUorbu9hRa';
-    		
-    		$scope='wl.singin%20wl.basic%20wl,emails';
-    		$response_type='token';
-    		
-    		$redirect_uri=$request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_live', array('lcb'=>'LST'));
-    		//$redirect_uri='https://login.live.com/oauth20_desktop.srf';
-    		$fields_string = "client_id=".$client_id."&scope=".$scope."&response_type=".$response_type."&redirect_uri=".$redirect_uri;
-    		echo $redirect_uri."<br/><br/>";
-    		echo $fields_string."<br/><br/>";
- 
-    		$ch = curl_init();
-    		//curl_setopt($ch, CURLOPT_URL, 'https://login.live.com/oauth20_authorize.srf?' .$fields_string );
-    		curl_setopt($ch, CURLOPT_URL, 'https://login.live.com/oauth20_authorize.srf');
-    		//curl_setopt($ch, CURLOPT_POST, 1);
-    		//curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/html', 'Content-Length: '. strlen($xml)));
-    		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www.form-urlencoded'));
-    		
-    		curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-    		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
-    		$postrespose = curl_exec($ch);
-    		//curl_close($ch);
-    		
-    		echo $curl_errno = curl_errno($ch);
-    		echo $curl_error = curl_error($ch);
-    		curl_close($ch);
-    		
-    		print_r($postrespose);
-    		echo "<br/><br/>LIVE1";
-    		*/
-    		
-    		$CLIENT_ID = '00000000480FD1C6';
-    		$clientsecret = '5hwwDBF8OHU68RHxsE-ehvkUorbu9hRa';
-    		$REDIRECT_URL = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_live')."LST";
-    		//print_r($REDIRECT_URL);
-    		//die();
-    		//$url = "https://oauth.live.com/authorize?client_id=$CLIENT_ID&scope=wl.signin&response_type=code&redirect_uri=$REDIRECT_URL";
-    		$url = "https://login.live.com/oauth20_authorize.srf?client_id=".$CLIENT_ID."&client_secret=".$CLIENT_SECRET."&scope=wl.signin,wl.basic,wl.emails,wl.contacts_emails&response_type=code&redirect_uri=".$REDIRECT_URL;
+			$url = "https://login.live.com/oauth20_authorize.srf?client_id=".$CLIENT_ID."&client_secret=".$CLIENT_SECRET."&scope=wl.signin,wl.basic,wl.emails,wl.contacts_emails&response_type=code&redirect_uri=".$REDIRECT_URL;
     		$url = str_replace( "&amp;", "&", urldecode(trim($url)) );
     		//dpm($url);
     		
@@ -480,47 +408,7 @@ class DefaultController extends Controller
     		curl_close($ch);
     		//$out = json_decode($out, true);
     		print_r($out);
-    		
-    		
-//echo "hope";
-    		
-    		/*
-    		$postFields = array(
-    				'client_id' => $CLIENT_ID,
-    				'client_secret' => $clientsecret,
-    				'code' => 'token',
-    				'redirect_uri' => $REDIRECT_URL,
-    				//'grant_type' => 'authorization_code'
-    		);
-    		$bodyData = http_build_query($postFields);
-    		
-    		$headers = array(
-    				'Content-Type: application/x-www-form-urlencoded'
-    		);
-    		
-
-    		$ch = curl_init("https://login.live.com/oauth20_authorize.srf");
-    		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-    		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-    		//curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-    		curl_setopt($ch, CURLOPT_POST, 1);
-    		curl_setopt($ch, CURLOPT_POSTFIELDS, $bodyData);
-    		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    		
-    		if (!$response = curl_exec($ch)) {
-    			throw new \Exception('cURL request failed');
-    		} else if (curl_getinfo($ch, CURLINFO_HTTP_CODE) != 200) {
-    			throw new \Exception('Live API returned an error response code: '.curl_getinfo($ch, CURLINFO_HTTP_CODE));
-    		} else if (!$responseObj = json_decode($response)) {
-    			throw new \Exception('Cannot decode API response as JSON; data: '.$response);
-    		} else if (!isset($responseObj->access_token)) {
-    			throw new \Exception('Live API did not return an access token; error: '.$responseObj->error_description);
-    		}
-    		
-    		print_r($responseObj);
-    		*/
-    		
-die();
+    		die();
     		//return $out;
     		//$todo = explode("\n",$out);
     		    		
@@ -541,7 +429,7 @@ die();
     
     
     //****************************************************************************************//
-
+    
     /**
      * LinkedIn action
      * @param \Symfony\Component\HttpFoundation\Request $request
@@ -553,276 +441,276 @@ die();
     
     	$user = $this->get('security.context')->getToken()->getUser();
     	//$id = $user->getMemberQid();  //var_dump($id); die;
-    	//print_r($user);    
+    	//print_r($user);
     	//////////////////////////////////////////////////////////////////////////////////////
-    //http://developer.linkedin.com/forum/post-httpapilinkedincomv1peoplemailbox-error
-    //limit to 10 per day ?????? https://developer.linkedin.com/documents/throttle-limits
-    	
+    	//http://developer.linkedin.com/forum/post-httpapilinkedincomv1peoplemailbox-error
+    	//limit to 10 per day ?????? https://developer.linkedin.com/documents/throttle-limits
+    
     	$response = new Response();
-    	
+    
     	if(isset($lcb) && $lcb == 'LST'){
-    	//	echo "START 0</br/>";  die();
+    		//	echo "START 0</br/>";  die();
     	}
-    	
-        //**//
-        $request = $this->getRequest();
-        $REDIRECT_URI =  $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath();
-        $url = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_linkedincb', array('lcb'=>'LST'));
-
-        $API_KEY    = $this->container->getParameter('LINKEDIN_API_KEY');
-        $API_SECRET = $this->container->getParameter('LINKEDIN_API_SECRET');   
-        
-        $SCOPE      = 'w_messages r_fullprofile r_emailaddress rw_nus r_network';        
-        
-        
-        // You'll probably use a database
-        session_name('linkedin');
-        
-        // OAuth 2 Control Flow
-        if (isset($_GET['error'])) {
-	        // LinkedIn returned an error
-	        print $_GET['error'] . ': ' . $_GET['error_description'];
-	        exit;
-        } elseif (isset($_GET['code'])) {
-        // User authorized your application
-	        if ($_SESSION['state'] == $_GET['state']) {
-		        // Get token so you can make API calls
-	        	//echo "access token"; die();
-		        $this->getAccessToken($API_KEY, $API_SECRET, $url);
-	        } else {
-		        // CSRF attack? Or did you mix up your states?
-		        exit;
-	        }
-        } else {
-	        if ((empty($_SESSION['expires_at'])) || (time() > $_SESSION['expires_at'])) {
-	        // Token has expired, clear the state
-	        $_SESSION = array();
-	        }
-	        if (empty($_SESSION['access_token'])) {
-	        // Start authorization process
-	       // echo "Auth"; die();
-	        $this->getAuthorizationCode($API_KEY, $SCOPE, $url);
-	        }
-        }
-        
-        // Congratulations! You have a valid token. Now fetch your profile
-        //http://api.linkedin.com/v1/people/~/connections
-       // $user = $this->fetch('GET', '/v1/people/~:(firstName,lastName)');
-        $user2 = $this->fetch('GET', '/v1/people/~:(id,firstName,lastName)');
-        //print_r($user2->{'id'});
-        // print "Hello $user2->firstName $user2->lastName.";
-        
-       // $user = $this->fetch('GET', '/v1/people/~/connections:(first-name,last-name,main-address)');
-        $user = $this->fetch('GET', '/v1/people/~/connections');
-        
-        //print_r($user); die();
-       // print_r($user->{'values'}); die();
-        if($user->{'_total'} > 0){
-        	
-        	$contacts=array();
-        	foreach($user->{'values'} as $key=>$val){
-        		//echo $key."=>".$val;
-        		//print_r($key);
-        		//foreach($val as $lkey=>$lval){        			
-        			//echo $lkey."=>".$lval;
-        		//}
-        		
-        		//////////////////////////////////////// SEND LINKEDIN MESSAGE ////////////////////////////////////////////////        	
-        		$subject= "Hello come join me at qubeey.com!";
-        		$body= "Hello ".$val->{'firstName'}." ".$val->{'lastName'}."!  Join me at http://www.qubeey.com";        		
-        		//$postrespose =  $this->sendMessageById($val->{'id'}, $ccUser=true, $subject, $body);        		
-        		
-        		
-        		//$postrespose = $this->fetch('POST', '/v1/people/~/mailbox', $data2);        		
-        		//echo "the result of a post messages: ";	print_r($postrespose); echo "<br/><br/>";        		
-				////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        		//print_r($val);
-        		/*
-        		echo "<br/><br/>";
-        		echo "id: ".$val->{'id'}."<br/>";
-        		echo "firstName: ".$val->{'firstName'}."<br/>";
-        		echo "lastName: ".$val->{'lastName'}."<br/>";
-        		echo "headline: ".$val->{'headline'};
-        		echo "<br/><br/>";
-        		*/
-        		$contacts[trim($val->{'id'})] = $val->{'firstName'}." ".$val->{'lastName'};
-        		
-        	}
-        	
-        }
-        
-       // print_r($contacts);
-       // die();
-        
-        $this->_setSessionVar(array(
-        		self::SVAR_STEP     => self::STEP_INVITE,
-        		self::SVAR_SESSID   => $user2->{'id'}, //$this->openinviter->plugin->getSessionID(),
-        		self::SVAR_PROVIDER => 'linkedin', //$values['provider'],
-        		self::SVAR_EMAIL    => '', //$values['email'],
-        		self::SVAR_CONTACTS => $contacts,
-        ));
-        
-        return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
-   
-        //**//
-
-        ///////////////////////////////////////////////////////////////////////////////
-    }    
-
+    
+    	//**//
+    	$request = $this->getRequest();
+    	$REDIRECT_URI =  $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath();
+    	$url = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_linkedincb', array('lcb'=>'LST'));
+    
+    	$API_KEY    = $this->container->getParameter('LINKEDIN_API_KEY');
+    	$API_SECRET = $this->container->getParameter('LINKEDIN_API_SECRET');
+    
+    	$SCOPE      = 'w_messages r_fullprofile r_emailaddress rw_nus r_network';
+    
+    
+    	// You'll probably use a database
+    	session_name('linkedin');
+    
+    	// OAuth 2 Control Flow
+    	if (isset($_GET['error'])) {
+    		// LinkedIn returned an error
+    		print $_GET['error'] . ': ' . $_GET['error_description'];
+    		exit;
+    	} elseif (isset($_GET['code'])) {
+    		// User authorized your application
+    		if ($_SESSION['state'] == $_GET['state']) {
+    			// Get token so you can make API calls
+    			//echo "access token"; die();
+    			$this->getAccessToken($API_KEY, $API_SECRET, $url);
+    		} else {
+    			// CSRF attack? Or did you mix up your states?
+    			exit;
+    		}
+    	} else {
+    		if ((empty($_SESSION['expires_at'])) || (time() > $_SESSION['expires_at'])) {
+    			// Token has expired, clear the state
+    			$_SESSION = array();
+    		}
+    		if (empty($_SESSION['access_token'])) {
+    			// Start authorization process
+    			// echo "Auth"; die();
+    			$this->getAuthorizationCode($API_KEY, $SCOPE, $url);
+    		}
+    	}
+    
+    	// Congratulations! You have a valid token. Now fetch your profile
+    	//http://api.linkedin.com/v1/people/~/connections
+    	// $user = $this->fetch('GET', '/v1/people/~:(firstName,lastName)');
+    	$user2 = $this->fetch('GET', '/v1/people/~:(id,firstName,lastName)');
+    	//print_r($user2->{'id'});
+    	// print "Hello $user2->firstName $user2->lastName.";
+    
+    	// $user = $this->fetch('GET', '/v1/people/~/connections:(first-name,last-name,main-address)');
+    	$user = $this->fetch('GET', '/v1/people/~/connections');
+    
+    	//print_r($user); die();
+    	// print_r($user->{'values'}); die();
+    	if($user->{'_total'} > 0){
+    
+    		$contacts=array();
+    		foreach($user->{'values'} as $key=>$val){
+    			//echo $key."=>".$val;
+    			//print_r($key);
+    			//foreach($val as $lkey=>$lval){
+    			//echo $lkey."=>".$lval;
+    			//}
+    
+    			//////////////////////////////////////// SEND LINKEDIN MESSAGE ////////////////////////////////////////////////
+    			$subject= "Hello come join me at qubeey.com!";
+    			$body= "Hello ".$val->{'firstName'}." ".$val->{'lastName'}."!  Join me at http://www.qubeey.com";
+    			//$postrespose =  $this->sendMessageById($val->{'id'}, $ccUser=true, $subject, $body);
+    
+    
+    			//$postrespose = $this->fetch('POST', '/v1/people/~/mailbox', $data2);
+    			//echo "the result of a post messages: ";	print_r($postrespose); echo "<br/><br/>";
+    			////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    			//print_r($val);
+    			/*
+    			echo "<br/><br/>";
+    			echo "id: ".$val->{'id'}."<br/>";
+    			echo "firstName: ".$val->{'firstName'}."<br/>";
+    			echo "lastName: ".$val->{'lastName'}."<br/>";
+    			echo "headline: ".$val->{'headline'};
+    			echo "<br/><br/>";
+    			*/
+    			$contacts[trim($val->{'id'})] = $val->{'firstName'}." ".$val->{'lastName'};
+    
+    }
+    
+    }
+    
+    // print_r($contacts);
+    // die();
+    
+    $this->_setSessionVar(array(
+    		self::SVAR_STEP     => self::STEP_INVITE,
+    		self::SVAR_SESSID   => $user2->{'id'}, //$this->openinviter->plugin->getSessionID(),
+    		self::SVAR_PROVIDER => 'linkedin', //$values['provider'],
+    		self::SVAR_EMAIL    => '', //$values['email'],
+    		self::SVAR_CONTACTS => $contacts,
+    		));
+    
+    		return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
+    
+    			//**//
+    
+    			///////////////////////////////////////////////////////////////////////////////
+    }
+    
     function sendMessageById($id, $ccUser=FALSE, $subject='', $message='') {
-    	//$messageUrl   =   "http://api.linkedin.com/v1/people/~/mailbox";
-    	$messageUrl   =   "/v1/people/~/mailbox";
+    //$messageUrl   =   "http://api.linkedin.com/v1/people/~/mailbox";
+    $messageUrl   =   "/v1/people/~/mailbox";
     
-    	$subject      =   htmlspecialchars($subject, ENT_NOQUOTES, "UTF-8") ;
-    	$message      =   htmlspecialchars($message, ENT_NOQUOTES, "UTF-8") ;
+    $subject      =   htmlspecialchars($subject, ENT_NOQUOTES, "UTF-8") ;
+    $message      =   htmlspecialchars($message, ENT_NOQUOTES, "UTF-8") ;
     
-    	if ($ccUser){
-    		$CCToUser   =   "<recipient>
-    		<person path='/people/~'></person>
-    		</recipient>";
+    if ($ccUser){
+    $CCToUser   =   "<recipient>
+    <person path='/people/~'></person>
+    </recipient>";
+    			}
+    			else{
+    			$CCToUser   =   '';
+    			}
+    
+    			$xml = '<?xml version="1.0" encoding="UTF-8" ?>';
+    			$xml .= "<mailbox-item>
+    			<recipients>
+    			$CCToUser
+    			<recipient>
+    			<person path='/people/$id' ></person>
+    			</recipient>
+    			</recipients>
+    			<subject>$subject</subject>
+    			<body>$message</body>
+    			</mailbox-item>";
+    
+    			//echo $xml . "\n";
+    
+    			$fields_string = "oauth2_access_token=".$_SESSION['access_token'];
+    			$ch = curl_init();
+    			curl_setopt($ch, CURLOPT_URL, 'https://api.linkedin.com'.$messageUrl. '?' .$fields_string );
+    			curl_setopt($ch, CURLOPT_POST, 1);
+    			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/xml', 'Content-Length: '. strlen($xml)));
+    			curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
+    			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    			//curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+    			$postrespose = curl_exec($ch);
+    			//curl_close($ch);
+    
+    			$curl_errno = curl_errno($ch);
+    			$curl_error = curl_error($ch);
+    			curl_close($ch);
+    
+    			//print_r($curl_errno);
+    			//print_r($curl_error);
+    			//print_r($postrespose); die();
+    
+    			return $postrespose;
+    }
+    	//////////////////// LinkedIn Methods///////////////////////////////////////////////////////////////////////
+    	function getAuthorizationCode($API_KEY, $SCOPE, $url) {
+    	$params = array('response_type' => 'code',
+    	'client_id' => $API_KEY,
+    	'scope' => $SCOPE,
+    	'state' => uniqid('', true), // unique long string
+    	'redirect_uri' => $url,
+    	);
+    
+    	// Authentication request
+    	$url2 = 'https://www.linkedin.com/uas/oauth2/authorization?' . http_build_query($params);
+    
+    	// Needed to identify request when it returns to us
+    	$_SESSION['state'] = $params['state'];
+    
+    	// Redirect user to authenticate
+    	header("Location: $url2");
+    	exit;
     	}
-    	else{
-    		$CCToUser   =   '';
-    	}
-    	
-    	$xml = '<?xml version="1.0" encoding="UTF-8" ?>';
-    	$xml .= "<mailbox-item>
-    	<recipients>
-    	$CCToUser
-    	<recipient>
-    	<person path='/people/$id' ></person>
-    	</recipient>
-    	</recipients>
-    	<subject>$subject</subject>
-    	<body>$message</body>
-    	</mailbox-item>";
     
-    	//echo $xml . "\n";
-    	
-    	$fields_string = "oauth2_access_token=".$_SESSION['access_token'];
+    	function getAccessToken($API_KEY, $API_SECRET, $url) {
+    	$params = array('grant_type' => 'authorization_code',
+    			'client_id' => $API_KEY,
+    			'client_secret' => $API_SECRET,
+    			'code' => $_GET['code'],
+    			'redirect_uri' => $url,
+    	);
+    
+    	// Access Token request
+    	//$url2 = 'https://www.linkedin.com/uas/oauth2/accessToken?' . http_build_query($params);
+    	$url2 = 'https://www.linkedin.com/uas/oauth2/accessToken';
+    
+    	// Tell streams to make a POST request
+    	$context = stream_context_create(
+    	array('http' =>
+    			array('method' => 'POST',
+    			'header'  => 'Content-type:txt/html',
+    	)
+    	)
+    	);
+    
+    	// Retrieve access token information
+    	//$response = file_get_contents($url2, false, $context)
+    
+    
+    	//******//
+    	$fields_string = "grant_type=authorization_code&client_id=".$API_KEY."&client_secret=".$API_SECRET."&code=".$_GET['code']."&redirect_uri=".$url;
     	$ch = curl_init();
-    	curl_setopt($ch, CURLOPT_URL, 'https://api.linkedin.com'.$messageUrl. '?' .$fields_string );
+    	curl_setopt($ch, CURLOPT_URL, $url2);
     	curl_setopt($ch, CURLOPT_POST, 1);
-    	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/xml', 'Content-Length: '. strlen($xml)));
-    	curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
-    	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    	//curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-    	$postrespose = curl_exec($ch);
-    	//curl_close($ch);
-    	    	
-    	$curl_errno = curl_errno($ch);
-    	$curl_error = curl_error($ch);
-    	curl_close($ch);
-    	
-    	//print_r($curl_errno);
-    	//print_r($curl_error);
-    	//print_r($postrespose); die();
-    	
-    	return $postrespose;
-    }	
-//////////////////// LinkedIn Methods///////////////////////////////////////////////////////////////////////
-    function getAuthorizationCode($API_KEY, $SCOPE, $url) {
-	    $params = array('response_type' => 'code',
-	    'client_id' => $API_KEY,
-	    'scope' => $SCOPE,
-	    'state' => uniqid('', true), // unique long string
-	    'redirect_uri' => $url,
-	    );
-	    
-	    // Authentication request
-	    $url2 = 'https://www.linkedin.com/uas/oauth2/authorization?' . http_build_query($params);
-	    
-	    // Needed to identify request when it returns to us
-	    $_SESSION['state'] = $params['state'];
-	    
-	    // Redirect user to authenticate
-	    header("Location: $url2");
-	    exit;
+    	curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
+    	// curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+    	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    	$response = curl_exec ($ch);
+    	curl_close ($ch);
+    	//print_r($response);
+    	//die();
+    	//******//
+    	// Native PHP object, please
+    	$token = json_decode($response);
+    
+    	// Store access token and expiration time
+    	$_SESSION['access_token'] = $token->access_token; // guard this!
+    		$_SESSION['expires_in']   = $token->expires_in; // relative time (in seconds)
+    		$_SESSION['expires_at']   = time() + $_SESSION['expires_in']; // absolute time
+    
+    		return true;
+    	}
+    
+    	function fetch($method, $resource, $body = '') {
+    		$params = array('oauth2_access_token' => $_SESSION['access_token'],
+    		'format' => 'json',
+    		);
+    
+    		// Need to use HTTPS
+    		$url = 'https://api.linkedin.com' . $resource . '?' . http_build_query($params);
+    		// Tell streams to make a (GET, POST, PUT, or DELETE) request
+    				$context = stream_context_create(
+    				array('http' =>
+    						array('method' => $method,
+    						)
+    						)
+    						);
+    
+    						$fields_string = "oauth2_access_token=".$_SESSION['access_token']."&format=json";
+    		$ch = curl_init();
+    		curl_setopt($ch, CURLOPT_URL, 'https://api.linkedin.com'.$resource. '?' .$fields_string );
+    		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+    		$response = curl_exec($ch);
+    		curl_close($ch);
+    		// print_r($response);
+    // die();
+    
+    // Hocus Pocus
+    //$response = file_get_contents($url, false, $context);
+    //print_r($response);
+    
+    // Native PHP object, please
+    return json_decode($response);
     }
     
-    function getAccessToken($API_KEY, $API_SECRET, $url) {
-	    $params = array('grant_type' => 'authorization_code',
-	    'client_id' => $API_KEY,
-	    'client_secret' => $API_SECRET,
-	    'code' => $_GET['code'],
-	    'redirect_uri' => $url,
-	    );
-	    
-	    // Access Token request
-	    //$url2 = 'https://www.linkedin.com/uas/oauth2/accessToken?' . http_build_query($params);
-	    $url2 = 'https://www.linkedin.com/uas/oauth2/accessToken';
-	    
-	    // Tell streams to make a POST request
-	    $context = stream_context_create(
-	    array('http' =>
-	    array('method' => 'POST',
-	    'header'  => 'Content-type:txt/html',
-	    )
-	    )
-	    );
-	    
-	    // Retrieve access token information
-	    //$response = file_get_contents($url2, false, $context)
-	   
-	
-	    //******//  
-	    $fields_string = "grant_type=authorization_code&client_id=".$API_KEY."&client_secret=".$API_SECRET."&code=".$_GET['code']."&redirect_uri=".$url;
-	    $ch = curl_init();
-	    curl_setopt($ch, CURLOPT_URL, $url2);
-	    curl_setopt($ch, CURLOPT_POST, 1);
-	    curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-	    // curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
-	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	    $response = curl_exec ($ch);
-	    curl_close ($ch);
-	    //print_r($response);
-	    //die();
-	    //******//
-	    // Native PHP object, please
-	    $token = json_decode($response);
-	    
-	    // Store access token and expiration time
-	    $_SESSION['access_token'] = $token->access_token; // guard this!
-	    $_SESSION['expires_in']   = $token->expires_in; // relative time (in seconds)
-	    $_SESSION['expires_at']   = time() + $_SESSION['expires_in']; // absolute time
-	    
-	    return true;
-    }
-    
-    function fetch($method, $resource, $body = '') {
-	    $params = array('oauth2_access_token' => $_SESSION['access_token'],
-	    'format' => 'json',
-	    );
-	    
-	    // Need to use HTTPS
-	    $url = 'https://api.linkedin.com' . $resource . '?' . http_build_query($params);
-	    // Tell streams to make a (GET, POST, PUT, or DELETE) request
-	    $context = stream_context_create(
-	    array('http' =>
-	    array('method' => $method,
-	    )
-	    )
-	    );
-	    
-	    $fields_string = "oauth2_access_token=".$_SESSION['access_token']."&format=json";
-	    $ch = curl_init();
-	    curl_setopt($ch, CURLOPT_URL, 'https://api.linkedin.com'.$resource. '?' .$fields_string );
-	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-	    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-	    $response = curl_exec($ch);
-	    curl_close($ch);
-	   // print_r($response);
-	   // die();
-	   
-	    // Hocus Pocus
-	    //$response = file_get_contents($url, false, $context);
-	    //print_r($response);
-	   
-	    // Native PHP object, please
-	    return json_decode($response);
-    }
-    
-//////////////////////////////////////// END LinkedIn Methods////////////////////////////////////////// 
+    //////////////////////////////////////// END LinkedIn Methods//////////////////////////////////////////
     
     //****************************************************************************************//
 
@@ -1178,7 +1066,225 @@ die();
     //}
     }
     
+    //====================================================  Vimeo Action ==================================================//
+    /**
+     * Vimeo action
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse
+     */
+    public function vimeoAction(Request $request, $user)
+    {
+    	$this->_init();
     
+    	$member = $this->get('security.context')->getToken()->getUser();
+    	$id = $member->getMemberQid();  //var_dump($id); die;
+    
+    	//////////////////////////////////////////////////////////////////////////////////////
+    
+    	$response = new Response();
+    
+    	$request = $this->getRequest();
+    	$redirect_url =  $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath();
+    	//$url = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath() . $this->generateUrl('artseld_openinviter_login');
+    	$url = $request->getScheme().'://'.$request->getHttpHost().$request->getBasePath().$this->generateUrl('artseld_openinviter_vimeo', array('user'=>'olechka'));
+    
+    	//$_consumer_key    = '70418d113d90a73b7fe63fbd18f46985c2c4f6e7';  // Client ID (Also known as Consumer Key or API Key)
+    	//$_consumer_secret = '5a7aff371bed7ca71b3a30a9ea4a1da0d1a9f38f';  // Client Secret (Also known as Consumer Secret or API Secret)
+    	//$_token           = '318d1b37e3fbb2e2abce499876054d01';          // Access token
+    	//$_token_secret    = 'f835c4de75ad41d8e85e9bec54673fd3d8c8cbc7';  // Access token secret     // guard this!
+    	$_consumer_key    = $this->container->getParameter('VIMEO_CONSUMER_KEY');
+    	$_consumer_secret = $this->container->getParameter('VIMEO_CONSUMER_SECRET');
+    	$_token           = $this->container->getParameter('VIMEO_ACCESS_TOKEN');    //echo "<br />AccessToken: " . $_token;
+    	$_token_secret    = $this->container->getParameter('VIMEO_TOKEN_SECRET');
+    
+    	//echo "<br />TOKEN: " . $this->container->getParameter('VIMEO_ACCESS_TOKEN');
+    
+    	$API_REST_URL          = 'http://vimeo.com/api/rest/v2';
+    	$API_AUTH_URL          = 'http://vimeo.com/oauth/authorize';      // Authorize URL
+    	$API_ACCESS_TOKEN_URL  = 'http://vimeo.com/oauth/access_token';   // Access Token URL
+    	$API_REQUEST_TOKEN_URL = 'http://vimeo.com/oauth/request_token';  // Request Token URL
+    
+    	// echo  $this->get('kernel')->getRootDir(); echo "<br/>";
+    	// echo  $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $request->getBasePath();  //home2/olga/serverWeb/app/../web/dev
+    	// die();
+    	$path= $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $this->getRequest()->getBasePath();
+    
+    	$this->_cache_dir = $path;     //echo "<br /><br />Path from class: " . getcwd();
+    	//$files = scandir($this->_cache_dir);
+    
+    	$filename = $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $this->getRequest()->getBasePath(); // . $this->getRequest()->getBasePath();
+    
+    	if (file_exists($filename)) {
+    		echo "<br /><br />The file $filename exists";
+    } else {
+    	echo "<br /><br />The file $filename does not exist";
+    }
+    //die();
+    		//====================================================== simple api interface ====================================================================//
+    
+    		$vim = new \Qubeey\ApiBundle\Utility\Vimeo($_consumer_key, $_consumer_secret, $_token, $_token_secret);   print_r($vim);
+    
+    		$params = array(1);//vimeo.contacts.getAll
+    		//
+    		$vim->setToken($_token, $_token_secret);
+    		$token = $vim->getRequestToken();  echo "<br /><br />I am here: <br />" . print_r($token);
+    //$vim->getAccessToken('olechka');
+    $vim->getAuthorizeUrl($_consumer_key);
+    $vim->auth('read', 'http://nginx1.qubedev.com:7031/app_dev.php/oi/invite');
+    echo $vim->call('vimeo.contacts.getAll', $params);
+    //echo md5(uniqid(microtime()));
+    
+    //================================================================================================================================================//
+    
+    
+    // Create the object and enable caching
+    //$vimeo = new \Qubeey\ApiBundle\Utility\Vimeo($_consumer_key, $_consumer_secret, $_token, $_token_secret);
+    ///$vimeo = new \Qubeey\ApiBundle\Utility\Vimeo($this->container->getParameter('VIMEO_CONSUMER_KEY'), $this->container->getParameter('VIMEO_CONSUMER_SECRET'),$_token, $_token_secret);
+    //$vimeo->enableCache(\Qubeey\ApiBundle\Utility\Vimeo::CACHE_FILE, $path, 300);
+    //$vimeo->enableCache(phpVimeo::CACHE_FILE, './cache', 300);
+    //echo "<br /><br />Vimeo: ";
+    //print_r($vimeo); die();
+    
+    	/* Save the access tokens. Normally these would be saved in a database for future use.  DO IT IN SYMFONY */
+    // Set up variables
+    //$state = 'start';
+    
+    //$state = $_SESSION['vimeo_state'];                   //echo "<br />Vimeo State: " . $_SESSION['vimeo_state'];
+    $request_token = $_SESSION['oauth_request_token'];   //echo "<br />Vimeo oauth_request_token: " . $_SESSION['oauth_request_token'];
+    $access_token = $_SESSION['oauth_access_token'];     //echo "<br />Vimeo oauth_access_token: " . $_SESSION['oauth_access_token'];
+    
+    echo "<br /><br />Vimeo: ";
+    print_r($vimeo); //die();
+    echo "<br /><br />Oauth Token: " . $_REQUEST['oauth_token'];
+    /************************************************************************************************************************************************/
+    /*
+    // Coming back
+    if ($_REQUEST['oauth_token'] != NULL && $_SESSION['vimeo_state'] === 'start') {
+    $_SESSION['vimeo_state'] = $state = 'returned';
+    }
+    
+    // If we have an access token, set it
+    if (isset($_SESSION['oauth_access_token']) && ($_SESSION['oauth_access_token'] != null)) {
+    $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']);  echo "access token: " . $_SESSION['oauth_access_token'];
+    }
+    
+    switch ($_SESSION['vimeo_state']) {
+    default:
+    
+    // Get a new request token
+    $token = $vimeo->getRequestToken();  echo "<br /><br />I am here: " . print_r($token);
+    
+    // Store it in the session
+    $_SESSION['oauth_request_token'] = $token['oauth_token'];
+    $_SESSION['oauth_request_token_secret'] = $token['oauth_token_secret'];
+    $_SESSION['vimeo_state'] = 'start';
+    
+    // Build authorize link
+    $authorize_link = $vimeo->getAuthorizeUrl($token['oauth_token'], 'write');
+    
+    break;
+    
+    case 'returned':
+    
+    // Store it
+    if ($_SESSION['oauth_access_token'] === NULL && $_SESSION['oauth_access_token_secret'] === NULL) {
+    // Exchange for an access token
+    $vimeo->setToken($_SESSION['oauth_request_token'], $_SESSION['oauth_request_token_secret']);
+    $token = $vimeo->getAccessTokenVim($_REQUEST['oauth_verifier']);
+    
+    // Store
+    $_SESSION['oauth_access_token'] = $token['oauth_token'];
+    $_SESSION['oauth_access_token_secret'] = $token['oauth_token_secret'];
+    $_SESSION['vimeo_state'] = 'done';
+    
+    // Set the token
+    $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']);
+    }
+    
+    // Do an authenticated call
+    try {
+    $videos = $vimeo->call('vimeo.videos.getUploaded');
+    }
+    catch (VimeoAPIException $e) {
+    echo "Encountered an API error -- code {$e->getCode()} - {$e->getMessage()}";
+    }
+    
+    break;
+    
+    }
+    //*********************************************************************************************************************/
+    
+    // Change this to your username to load in your videos
+    // $vimeo_user_name = ($_GET['user']) ? $_GET['user'] : 'olechka';
+    $vimeo_user_name = $user ? $user : 'olechka';
+    
+    // API endpoint
+    $api_endpoint = 'http://vimeo.com/api/v2/' . $vimeo_user_name;
+    
+    // Curl helper function
+    function curl_get($url) {
+    $curl = curl_init($url);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curl, CURLOPT_TIMEOUT, 30);
+    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+    $return = curl_exec($curl);
+    curl_close($curl);
+    return $return;
+    }
+    
+    // Load the user info and clips
+    $user = simplexml_load_string(curl_get($api_endpoint . '/info.xml'));
+    $videos = simplexml_load_string(curl_get($api_endpoint . '/videos.xml'));
+    
+    $output = '';
+    $output .= '<h1>Vimeo API PHP Example</h1>';
+    $output .= '<div id="stats">';
+    $output .= '<img id="portrait" src="'. $user->user->portrait_small .'" />';
+    $output .= '<h2>'. $user->user->display_name.'\'s Videos</h2>';
+    $output .= '</div>';
+    $output .= '<p id="bio">'. $user->user->bio .'</p>';
+    $output .= '<div id="thumbs">';
+    $output .= '<ul>';
+    foreach ($videos->video as $video) {
+    $output .= '<li>';
+    $output .= '<a href="'. $video->url .'"><img src="'. $video->thumbnail_medium .'" /></a>';
+    $output .= '</li>';
+    }
+    $output .= '</ul>';
+    $output .= '</div>';
+    //========================================================================================
+    /*
+    $output .= '<h1>Vimeo Advanced API OAuth Example</h1>';
+    $output .= '<p>This is a basic example of Vimeo\'s new OAuth authentication method.
+    Everything is saved in session vars, so <a href="?clear=all">click here if you want to start over</a>.</p>';
+    
+    if ($_SESSION['vimeo_state'] == 'start') {
+    $output .= '<p>Click the link to go to Vimeo to authorize your account.</p>';
+    $output .= '<p><a href="'.$authorize_link.'">'.$authorize_link.'</a></p>';
+    }
+    
+    if ($ticket) {
+    $output .= '<pre>'. print_r($ticket) .'</pre>';
+    }
+    
+    if ($videos) {
+    $output .= '<pre>'. print_r($videos) .'</pre>';
+    }
+    */
+    //=======================================================================================
+    
+    
+    echo $output;
+    //die();
+    return $this->get('templating')->renderResponse(
+    'ArtseldOpeninviterBundle:Default:done.html.twig', array('output'=> $output
+    ));
+    
+    }
+    
+    
+    
+    //==================================================== End Vimeo Action =============================================//    
 //***************************************************************************************//
     /**
      * Login action
