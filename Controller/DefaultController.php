@@ -1,4 +1,3 @@
-
 <?php
 
 /*
@@ -35,6 +34,8 @@ use TwitterOAuth\Api;
 use Qubeey\ApiBundle\Utility\LinkedIn;
 //use Artseld\OpeninviterBundle\Utility\YahooOAuth\OAuth\Globals;
 use Qubeey\ApiBundle\Utility\YahooOAuth\OAuth\Globals;
+use Qubeey\ApiBundle\Utility\Linkedinapi;
+use Qubeey\ApiBundle\Utility\Liveapi;
 
 
 class DefaultController extends Controller
@@ -85,14 +86,14 @@ class DefaultController extends Controller
     	$this->_init();
     
     	$user = $this->get('security.context')->getToken()->getUser();
-    	//$id = $user->getMemberQid();  //var_dump($id); die;
+    	$id = $user->getMemberQid();  //var_dump($id); die;
     	//print_r($user);
-    
-    	//////////////////////////////////////////////////////////////////////////////////////
-    
+    	
     	$response = new Response();
-    	$session = $request->getSession();
-    
+    	$session = $request->getSession();    	
+    	//$session = $this->get('session'); 
+    	   
+    	//////////////////////////////////////////////////////////////////////////////////////
     	$mt = microtime();
     	$rand = mt_rand();
     	
@@ -100,7 +101,7 @@ class DefaultController extends Controller
     	$oauth_secret_key = $this->container->getParameter('YAHOO_API_SECRET');
     	 	
 		$oauthcallback = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_yahoo')."LST";
-    	
+		$oauth_callback = '';
     	$yahooapi = new Globals();
     	//print_r($yahooapi);    	
     	//die();
@@ -114,14 +115,16 @@ class DefaultController extends Controller
 	    		list($info2, $headers2, $body2, $body_parsed2) = $getaccesstoken;
 
 	    		if ($info2['http_code'] == 200 && !empty($body2)) {
-
-	    			$_SESSION['oauth_accesstoken'] = $body_parsed2['oauth_token'];
-	    			$_SESSION['oauth_accesstoken_secret'] = $body_parsed2['oauth_token_secret'];
-	    
-	    			$_SESSION['oauth_session_handle'] = $body_parsed2['oauth_session_handle'];
-	    			$_SESSION['xoauth_yahoo_guid'] = $body_parsed2['xoauth_yahoo_guid'];
-	    
-	    			//print_r($_SESSION);	    
+	    			
+	    			$session->set('oauth_accesstoken', $body_parsed2['oauth_token']);	    			
+	    			$session->set('oauth_accesstoken_secret', $body_parsed2['oauth_token_secret']);
+	    			$session->set('oauth_session_handle', $body_parsed2['oauth_session_handle']);
+	    			$session->set('xoauth_yahoo_guid', $body_parsed2['xoauth_yahoo_guid']);
+	    			
+	    			
+	    			//print_r($session);
+	    			//echo $session->get('oauth_accesstoken');
+	    			    
 	    			//die();
 	    			
 	    			/*
@@ -129,16 +132,18 @@ class DefaultController extends Controller
     				//$querynum = 2 (Find my friends)
     				//$querynum = 3 (Find my contacts)
 	    			$querynum = 3;
-	    			$callyql = $yahooapi->call_yql($oauth_consumer_key, $oauth_secret_key, $querynum, rawurldecode($_SESSION['oauth_accesstoken']), rawurldecode($_SESSION['oauth_accesstoken_secret']), false, true, $oauth_callback);
+	    			$callyql = $yahooapi->call_yql($oauth_consumer_key, $oauth_secret_key, $querynum, rawurldecode($session->get('oauth_accesstoken')), rawurldecode($session->get('oauth_accesstoken_secret')), false, true, $oauth_callback);
 	    			print_r($callyql);
 	    			die();
 					*/
-	    			$callcontacts =  $yahooapi->callcontact($oauth_consumer_key, $oauth_secret_key, $_SESSION['xoauth_yahoo_guid'], rawurldecode($body_parsed2['oauth_token']), rawurldecode($body_parsed2['oauth_token_secret']), false, true);
 	    			
+	    			$callcontacts =  $yahooapi->callcontact($oauth_consumer_key, $oauth_secret_key, $session->get('xoauth_yahoo_guid'), rawurldecode($body_parsed2['oauth_token']), rawurldecode($body_parsed2['oauth_token_secret']), false, true);
+	    			//print_r($callcontacts); die();
 	    			list($info3, $headers3, $body3) = $callcontacts;
 	    			$callcontact = json_decode($body3, true);
-	    			print_r($callcontact);
+	    			//print_r($callcontact);echo "<br/><br/><br/>";
 	    			
+	    			$contacts=array();
 	    			foreach($callcontact['contacts']['contact'] as $key=>$val){
 	    				//echo $key."".$val."<br/>";
 	    				foreach($val as $key2=>$val2){
@@ -150,20 +155,45 @@ class DefaultController extends Controller
 	    					
 	    					if($key2 == 'fields'){
 	    						foreach($val2 as $key3=>$val3){
-	    							//echo $key3." ".$val3."<br/>";
-	    							foreach($val3 as $key4=>$val4){
-	    								echo $key4." ".$val4."<br/>";
+	    							//echo $key3." ".$val3."<br/>";	    							
+	    							if($val3['type'] == 'email'){
+	    								
+	    								//echo $val3['value']."<br>";
+	    								$contacts[trim($val3['value'])] = $val3['value'];
+	    								
+	    								foreach($val3 as $key4=>$val4){
+	    									//echo $key4." ".$val4."<br/>";
+	    									//$contacts[trim($val4)] = $val4;
+	    								}	    								
+	    							}else {
+	    								continue;
 	    							}
+
 	    						}
 	    					}
 	    				}
 	    				echo "<br/>";
 	    			}
+	    			
 	    			//$callcontact = json_decode($callcontacts, true);
 	    			//print_r($_SESSION);    
-	    			//print_r($callcontact);
-	    			die();
+	    			//print_r($contacts);
+	    			//die();
 	    			
+	    			
+	    			$this->_setSessionVar(array(
+	    					self::SVAR_STEP     => self::STEP_INVITE,
+	    					self::SVAR_SESSID   => mt_rand(), //'33765123', //$this->openinviter->plugin->getSessionID(),
+	    					self::SVAR_PROVIDER => 'yahoo', //$values['provider'],
+	    					self::SVAR_EMAIL    => '', //$values['email'],
+	    					self::SVAR_CONTACTS => $contacts,
+	    			));
+	    			
+	    			
+	    			return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
+	    			
+	    			
+	    			die();	    			
  			
 	    	  }    
     	  }
@@ -171,14 +201,10 @@ class DefaultController extends Controller
     }
     
     //////////////////////////////////////////////////////////////////////////////
-    
-    
-    
+
     $getrequesttoken = $yahooapi->get_request_token($oauth_consumer_key, $oauth_secret_key, $oauthcallback, false, true, true);
     
-    //print_r($getrequesttoken);
-    
-    //die();
+    //print_r($getrequesttoken);  //die();
     
     
     if (! empty($getrequesttoken)) {
@@ -188,8 +214,7 @@ class DefaultController extends Controller
 	    $_SESSION['oauth_requesttoken'] = $body_parsed['oauth_token'];
 	    			$_SESSION['oauth_requesttoken_secret'] = $body_parsed['oauth_token_secret'];
 	    
-	    			//echo $body_parsed['oauth_token'];
-	    			//die();
+	    			//echo $body_parsed['oauth_token']; //die();
 	    			$params = array(
 	    					'oauth_token' => $body_parsed['oauth_token'],
 	    					'oauth_token_secret' => $body_parsed['oauth_token_secret'],
@@ -234,16 +259,13 @@ class DefaultController extends Controller
     	$this->_init();
     
     	$user = $this->get('security.context')->getToken()->getUser();
-    	//$id = $user->getMemberQid();  //var_dump($id); die;
+    	$id = $user->getMemberQid();  //var_dump($id); die;
     	//print_r($user);
-    
-    	//////////////////////////////////////////////////////////////////////////////////////
-    
-    	$response = new Response();
-    	//echo "response: ";
-    	//print_r($response);
-    	//echo "<br/><br/>";
     	
+    	$response = new Response();
+    	$session = $request->getSession();
+    	$liveapi = new Liveapi();
+    	//////////////////////////////////////////////////////////////////////////////////////
 
     	$CLIENT_ID = $this->container->getParameter('LIVE_API_KEY');
     	$CLIENT_SECRET = $this->container->getParameter('LIVE_API_SECRET');
@@ -252,57 +274,18 @@ class DefaultController extends Controller
     	$scope='wl.singin,wl.basic,wl.emails,wl.contacts_emails';
     	//$REDIRECT_URL = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_live')."LST";
     	$u_agent = $_SERVER['HTTP_USER_AGENT'];
-    	
-    	if(isset($lcb) && $lcb == 'LSTT'){
-    		print_r($_REQUEST);
-    		die();
-    	}
+    	    	
     	
         	if(isset($lcb) && $lcb == 'LST'){
     		$REDIRECT_URL = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_live')."LST";
-    		echo "live";
-    		//echo "<br/><br/>";
-    		//echo "response: ";
-    		//print_r($response);
-    		//print_r($_GET);
-    		//print_r($_REQUEST);
-    		//print_r($_POST);
-    		echo "<br/><br/>";
-    		// echo "query: ".$_SERVER['QUERY_STRING'];
-    		//echo "<br/><br/>";
-    		//echo $_GET[access_token];
-    		echo  $request->get('access_token')."<br/><br/>";
-    		echo  $request->get('authentication_token')."<br/><br/>";
-    		echo  $request->get('token_type')."<br/><br/>";
-		
+
 //////////////////////////////////////////////////////////////////////////////
 			if($_GET['code']){
 				
-				
-				$fields_string = "client_id=".$CLIENT_ID."&redirect_uri=".$REDIRECT_URL."&client_secret=".$CLIENT_SECRET."&code=".$_GET['code']."&grant_type=authorization_code";
-				$ch = curl_init('https://login.live.com/oauth20_token.srf');
-				curl_setopt($ch, CURLOPT_POST, 1);
-				curl_setopt($ch, CURLOPT_HTTPHEADER, array(' Content-Type:application/x-www.form-urlencoded ', 'charset: UTF-8', 'Content-Length: '. strlen($fields_string)));
-				//curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www.form-urlencoded')); 
-				curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-				curl_setopt( $ch, CURLOPT_USERAGENT, $u_agent );
-				curl_setopt($ch, CURLOPT_HEADER, 0);
-				curl_setopt($ch, CURLOPT_VERBOSE,0);
-				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-				curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-				$output1 = curl_exec($ch);
-				
-				echo $curl_errno = curl_errno($ch);
-				echo $curl_error = curl_error($ch);
-				curl_close($ch);
-				$reqst = json_decode($output1, true);
-				//print_r($reqst);
-				
-				//echo $reqst['access_token'];
-				
-				
-				// ******************************************** //
-				$url = 'https://apis.live.net/v5.0/me/contacts?access_token='.$reqst['access_token'];
+				$getequestutorizationcode = $liveapi->getRequestAutorizationCode($CLIENT_ID, $CLIENT_SECRET, $REDIRECT_URL,$_GET['code']);
+
+				//$url = 'https://apis.live.net/v5.0/me/contacts?access_token='.$reqst['access_token'];
+				$url = 'https://apis.live.net/v5.0/me/contacts?access_token='.$getequestutorizationcode['access_token'];
 				$ch = curl_init($url);
 				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 				$output = curl_exec($ch);
@@ -343,7 +326,7 @@ class DefaultController extends Controller
 				
 				$this->_setSessionVar(array(
 						self::SVAR_STEP     => self::STEP_INVITE,
-						self::SVAR_SESSID   => '33765123', //$this->openinviter->plugin->getSessionID(),
+						self::SVAR_SESSID   => mt_rand(), //'33765123', //$this->openinviter->plugin->getSessionID(),
 						self::SVAR_PROVIDER => 'hotmail', //$values['provider'],
 						self::SVAR_EMAIL    => '', //$values['email'],
 						self::SVAR_CONTACTS => $contacts,
@@ -358,72 +341,22 @@ class DefaultController extends Controller
 
     		
 ///////////////////////////////////////////////////////////////////////////// 
-   		
-    		// echo $uri = $_SERVER['REQUEST_URI'];
-    		//echo   $currentUrl = $this->getRequest()->getUri();
-    		// echo $lcb;
-    	// ******************************************** //    
-    		$url = 'https://apis.live.net/v5.0/me/contacts?access_token='.$request->get('access_token');
-    		$ch = curl_init($url);
-    		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    		$output = curl_exec($ch);
-    		$output = json_decode($output,true);
-    		echo $curl_errno = curl_errno($ch);
-    		echo $curl_error = curl_error($ch);
-    		curl_close($ch);
-    		//print_r($output);
-    		
-    		foreach($output['data'] as $key=>$val){
-    			//echo $key." = ".$val."<br/>";
-    			foreach($val as $key2=>$val2){
-	    			echo $key2." = ".$val2."<br/>";
-	    			if($key2=='email_hashes'){
-		    			foreach($val2 as $ekey=>$eval){
-			    		echo "test: ".$ekey." = ".$eval."<br/>";
-			    		}
-		    		}
-	    
-	    		}   echo "<br/>";
-    		}
 
-    		die();
     }
     		
-			$url = "https://login.live.com/oauth20_authorize.srf?client_id=".$CLIENT_ID."&client_secret=".$CLIENT_SECRET."&scope=wl.signin,wl.basic,wl.emails,wl.contacts_emails&response_type=code&redirect_uri=".$REDIRECT_URL;
-    		$url = str_replace( "&amp;", "&", urldecode(trim($url)) );
-    		//dpm($url);
-    		
-    		$ch = curl_init($url);
-    		
-    		//curl_setopt($ch, CURLOPT_POST, 1);
-    		//curl_setopt( $ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows; U; Windows NT 5.1; rv:1.7.3) Gecko/20041001 Firefox/0.10.1" );
-    		curl_setopt($ch, CURLOPT_HEADER, 0);
-    		curl_setopt($ch, CURLOPT_VERBOSE,0);
-    		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-    		$out = curl_exec($ch);
-////////////////////////////////////////////////////
+    
+    		$code = $liveapi->getRequestCode($CLIENT_ID, $CLIENT_SECRET, $REDIRECT_URL);
+    
+    		print_r($code);
+    		// echo ($CLIENT_ID."<br/>". $CLIENT_SECRET."<br/>". $REDIRECT_URL); 
+    		die();
 
-////////////////////////////////////////////////////    		
-    		curl_close($ch);
-    		//$out = json_decode($out, true);
-    		print_r($out);
-    		die();
-    		//return $out;
-    		//$todo = explode("\n",$out);
-    		    		
-    		
-    		die();
-    		
     		return $this->get('templating')->renderResponse(
     				'ArtseldOpeninviterBundle:Default:live.html.twig', array(
     						'fbl' => '',
     				));
     		
     		//return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
-    
-    
-
     }
     //***************************************************************************************//
     
@@ -440,18 +373,18 @@ class DefaultController extends Controller
     	$this->_init();
     
     	$user = $this->get('security.context')->getToken()->getUser();
-    	//$id = $user->getMemberQid();  //var_dump($id); die;
+    	$id = $user->getMemberQid();  //var_dump($id); die;
     	//print_r($user);
+    	$response = new Response();
+    	//$session = $request->getSession();
+    	$linkedinapi = new Linkedinapi();
+    	
     	//////////////////////////////////////////////////////////////////////////////////////
     	//http://developer.linkedin.com/forum/post-httpapilinkedincomv1peoplemailbox-error
     	//limit to 10 per day ?????? https://developer.linkedin.com/documents/throttle-limits
     
     	$response = new Response();
-    
-    	if(isset($lcb) && $lcb == 'LST'){
-    		//	echo "START 0</br/>";  die();
-    	}
-    
+
     	//**//
     	$request = $this->getRequest();
     	$REDIRECT_URI =  $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath();
@@ -476,7 +409,7 @@ class DefaultController extends Controller
     		if ($_SESSION['state'] == $_GET['state']) {
     			// Get token so you can make API calls
     			//echo "access token"; die();
-    			$this->getAccessToken($API_KEY, $API_SECRET, $url);
+    			$linkedinapi->getAccessToken($API_KEY, $API_SECRET, $url);
     		} else {
     			// CSRF attack? Or did you mix up your states?
     			exit;
@@ -484,60 +417,30 @@ class DefaultController extends Controller
     	} else {
     		if ((empty($_SESSION['expires_at'])) || (time() > $_SESSION['expires_at'])) {
     			// Token has expired, clear the state
-    			$_SESSION = array();
+    			//$_SESSION = array();
     		}
     		if (empty($_SESSION['access_token'])) {
     			// Start authorization process
     			// echo "Auth"; die();
-    			$this->getAuthorizationCode($API_KEY, $SCOPE, $url);
+    			$linkedinapi->getAuthorizationCode($API_KEY, $SCOPE, $url);
     		}
     	}
     
     	// Congratulations! You have a valid token. Now fetch your profile
     	//http://api.linkedin.com/v1/people/~/connections
     	// $user = $this->fetch('GET', '/v1/people/~:(firstName,lastName)');
-    	$user2 = $this->fetch('GET', '/v1/people/~:(id,firstName,lastName)');
-    	//print_r($user2->{'id'});
-    	// print "Hello $user2->firstName $user2->lastName.";
+    	$user2 = $linkedinapi->fetch('GET', '/v1/people/~:(id,firstName,lastName)');
+
     
     	// $user = $this->fetch('GET', '/v1/people/~/connections:(first-name,last-name,main-address)');
-    	$user = $this->fetch('GET', '/v1/people/~/connections');
-    
-    	//print_r($user); die();
-    	// print_r($user->{'values'}); die();
-    	if($user->{'_total'} > 0){
-    
+    	$user = $linkedinapi->fetch('GET', '/v1/people/~/connections');
+
+    	if($user->{'_total'} > 0){    
     		$contacts=array();
     		foreach($user->{'values'} as $key=>$val){
-    			//echo $key."=>".$val;
-    			//print_r($key);
-    			//foreach($val as $lkey=>$lval){
-    			//echo $lkey."=>".$lval;
-    			//}
-    
-    			//////////////////////////////////////// SEND LINKEDIN MESSAGE ////////////////////////////////////////////////
-    			$subject= "Hello come join me at qubeey.com!";
-    			$body= "Hello ".$val->{'firstName'}." ".$val->{'lastName'}."!  Join me at http://www.qubeey.com";
-    			//$postrespose =  $this->sendMessageById($val->{'id'}, $ccUser=true, $subject, $body);
-    
-    
-    			//$postrespose = $this->fetch('POST', '/v1/people/~/mailbox', $data2);
-    			//echo "the result of a post messages: ";	print_r($postrespose); echo "<br/><br/>";
-    			////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    			//print_r($val);
-    			/*
-    			echo "<br/><br/>";
-    			echo "id: ".$val->{'id'}."<br/>";
-    			echo "firstName: ".$val->{'firstName'}."<br/>";
-    			echo "lastName: ".$val->{'lastName'}."<br/>";
-    			echo "headline: ".$val->{'headline'};
-    			echo "<br/><br/>";
-    			*/
-    			$contacts[trim($val->{'id'})] = $val->{'firstName'}." ".$val->{'lastName'};
-    
-    }
-    
-    }
+    			$contacts[trim($val->{'id'})] = $val->{'firstName'}." ".$val->{'lastName'};    
+    		}    
+    	}
     
     // print_r($contacts);
     // die();
@@ -556,164 +459,10 @@ class DefaultController extends Controller
     
     			///////////////////////////////////////////////////////////////////////////////
     }
-    
-    function sendMessageById($id, $ccUser=FALSE, $subject='', $message='') {
-    //$messageUrl   =   "http://api.linkedin.com/v1/people/~/mailbox";
-    $messageUrl   =   "/v1/people/~/mailbox";
-    
-    $subject      =   htmlspecialchars($subject, ENT_NOQUOTES, "UTF-8") ;
-    $message      =   htmlspecialchars($message, ENT_NOQUOTES, "UTF-8") ;
-    
-    if ($ccUser){
-    $CCToUser   =   "<recipient>
-    <person path='/people/~'></person>
-    </recipient>";
-    			}
-    			else{
-    			$CCToUser   =   '';
-    			}
-    
-    			$xml = '<?xml version="1.0" encoding="UTF-8" ?>';
-    			$xml .= "<mailbox-item>
-    			<recipients>
-    			$CCToUser
-    			<recipient>
-    			<person path='/people/$id' ></person>
-    			</recipient>
-    			</recipients>
-    			<subject>$subject</subject>
-    			<body>$message</body>
-    			</mailbox-item>";
-    
-    			//echo $xml . "\n";
-    
-    			$fields_string = "oauth2_access_token=".$_SESSION['access_token'];
-    			$ch = curl_init();
-    			curl_setopt($ch, CURLOPT_URL, 'https://api.linkedin.com'.$messageUrl. '?' .$fields_string );
-    			curl_setopt($ch, CURLOPT_POST, 1);
-    			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/xml', 'Content-Length: '. strlen($xml)));
-    			curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
-    			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    			//curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-    			$postrespose = curl_exec($ch);
-    			//curl_close($ch);
-    
-    			$curl_errno = curl_errno($ch);
-    			$curl_error = curl_error($ch);
-    			curl_close($ch);
-    
-    			//print_r($curl_errno);
-    			//print_r($curl_error);
-    			//print_r($postrespose); die();
-    
-    			return $postrespose;
-    }
-    	//////////////////// LinkedIn Methods///////////////////////////////////////////////////////////////////////
-    	function getAuthorizationCode($API_KEY, $SCOPE, $url) {
-    	$params = array('response_type' => 'code',
-    	'client_id' => $API_KEY,
-    	'scope' => $SCOPE,
-    	'state' => uniqid('', true), // unique long string
-    	'redirect_uri' => $url,
-    	);
-    
-    	// Authentication request
-    	$url2 = 'https://www.linkedin.com/uas/oauth2/authorization?' . http_build_query($params);
-    
-    	// Needed to identify request when it returns to us
-    	$_SESSION['state'] = $params['state'];
-    
-    	// Redirect user to authenticate
-    	header("Location: $url2");
-    	exit;
-    	}
-    
-    	function getAccessToken($API_KEY, $API_SECRET, $url) {
-    	$params = array('grant_type' => 'authorization_code',
-    			'client_id' => $API_KEY,
-    			'client_secret' => $API_SECRET,
-    			'code' => $_GET['code'],
-    			'redirect_uri' => $url,
-    	);
-    
-    	// Access Token request
-    	//$url2 = 'https://www.linkedin.com/uas/oauth2/accessToken?' . http_build_query($params);
-    	$url2 = 'https://www.linkedin.com/uas/oauth2/accessToken';
-    
-    	// Tell streams to make a POST request
-    	$context = stream_context_create(
-    	array('http' =>
-    			array('method' => 'POST',
-    			'header'  => 'Content-type:txt/html',
-    	)
-    	)
-    	);
-    
-    	// Retrieve access token information
-    	//$response = file_get_contents($url2, false, $context)
-    
-    
-    	//******//
-    	$fields_string = "grant_type=authorization_code&client_id=".$API_KEY."&client_secret=".$API_SECRET."&code=".$_GET['code']."&redirect_uri=".$url;
-    	$ch = curl_init();
-    	curl_setopt($ch, CURLOPT_URL, $url2);
-    	curl_setopt($ch, CURLOPT_POST, 1);
-    	curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-    	// curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
-    	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    	$response = curl_exec ($ch);
-    	curl_close ($ch);
-    	//print_r($response);
-    	//die();
-    	//******//
-    	// Native PHP object, please
-    	$token = json_decode($response);
-    
-    	// Store access token and expiration time
-    	$_SESSION['access_token'] = $token->access_token; // guard this!
-    		$_SESSION['expires_in']   = $token->expires_in; // relative time (in seconds)
-    		$_SESSION['expires_at']   = time() + $_SESSION['expires_in']; // absolute time
-    
-    		return true;
-    	}
-    
-    	function fetch($method, $resource, $body = '') {
-    		$params = array('oauth2_access_token' => $_SESSION['access_token'],
-    		'format' => 'json',
-    		);
-    
-    		// Need to use HTTPS
-    		$url = 'https://api.linkedin.com' . $resource . '?' . http_build_query($params);
-    		// Tell streams to make a (GET, POST, PUT, or DELETE) request
-    				$context = stream_context_create(
-    				array('http' =>
-    						array('method' => $method,
-    						)
-    						)
-    						);
-    
-    						$fields_string = "oauth2_access_token=".$_SESSION['access_token']."&format=json";
-    		$ch = curl_init();
-    		curl_setopt($ch, CURLOPT_URL, 'https://api.linkedin.com'.$resource. '?' .$fields_string );
-    		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-    		$response = curl_exec($ch);
-    		curl_close($ch);
-    		// print_r($response);
-    // die();
-    
-    // Hocus Pocus
-    //$response = file_get_contents($url, false, $context);
-    //print_r($response);
-    
-    // Native PHP object, please
-    return json_decode($response);
-    }
-    
-    //////////////////////////////////////// END LinkedIn Methods//////////////////////////////////////////
+
     
     //****************************************************************************************//
-
+    
     /**
      * Twitter action
      * @param \Symfony\Component\HttpFoundation\Request $request
@@ -724,155 +473,101 @@ class DefaultController extends Controller
     	$this->_init();
     
     	$user = $this->get('security.context')->getToken()->getUser();
-    	//$id = $user->getMemberQid();  //var_dump($id); die;
+    	$id = $user->getMemberQid();  //var_dump($id); die;
     	//print_r($user);
-    
+    	$response = new Response();
+    	$session = $request->getSession();
     	//////////////////////////////////////////////////////////////////////////////////////
     
-    	$response = new Response();
-    	//echo "response: ";
-    	//print_r($response);
-    	//echo "<br/><br/>";
-    	if(isset($twt) && $twt == 'LST'){
+    	if(isset($twt) && $twt == 'LST')
+    	{    
+    		//////////////////////////////////////////////////////////////////////////////////////
+    		$connection = new Api($this->container->getParameter('CONSUMERTWITKEY'), $this->container->getParameter('CONSUMERTWITSECRET'), $session->get('oauth_token'), $session->get('oauth_token_secret'));
+    		$access_token = $connection->getAccessToken($_REQUEST['oauth_verifier']);
+    		
+    		/* Save the access tokens. Normally these would be saved in a database for future use.  DO IT IN SYMFONY */
+    		//$_SESSION['access_token'] = $access_token;
+    		$session->set('access_token', $access_token);
+    		
+    		/* Remove no longer needed request tokens */
+    		//unset($_SESSION['oauth_token']);
+    		//unset($_SESSION['oauth_token_secret']);
+    
+    		/* If HTTP response is 200 continue otherwise send to connect page to retry */
+    		if (200 == $connection->http_code) {
+    			/* The user has been verified and the access tokens can be saved for future use.  DO IT IN SYMFONY*/
+    			$session->set('status', '');
+    			$session->set('status', 'verified');
+    			//header('Location: ./index.php');
+    			/* Create a TwitterOauth object with consumer/user tokens. */
+    			$connection = new Api($this->container->getParameter('CONSUMERTWITKEY'), $this->container->getParameter('CONSUMERTWITSECRET'), $access_token['oauth_token'], $access_token['oauth_token_secret']);
+    
+    			/* If method is set change API call made. Test is called by default. */
+    			$content = $connection->get('account/verify_credentials');
 
-			//////////////////////////////////////////////////////////////////////////////////////
-    			$connection = new Api($this->container->getParameter('CONSUMERTWITKEY'), $this->container->getParameter('CONSUMERTWITSECRET'), $_SESSION['oauth_token'], $_SESSION['oauth_token_secret']);
-    			$access_token = $connection->getAccessToken($_REQUEST['oauth_verifier']);
-    			/* Save the access tokens. Normally these would be saved in a database for future use.  DO IT IN SYMFONY */
-    			$_SESSION['access_token'] = $access_token;
+    
+    			$connection->host = 'https://api.twitter.com/1.1/'; // By default library uses API version 1.
     			
-    			/* Remove no longer needed request tokens */
-    			//unset($_SESSION['oauth_token']);
-    			//unset($_SESSION['oauth_token_secret']);
+    			//GET Followers
+    			$friendsJson = $connection->get('/followers/list.json?cursor=-1&screen_name='.$content->{'screen_name'}.'&skip_status=true&include_user_entities=false');
     			
-    			/* If HTTP response is 200 continue otherwise send to connect page to retry */
-    			if (200 == $connection->http_code) {
-    				/* The user has been verified and the access tokens can be saved for future use.  DO IT IN SYMFONY*/
-    				$_SESSION['status'] = 'verified';
-    				//header('Location: ./index.php');
-    				/* Create a TwitterOauth object with consumer/user tokens. */
-    				$connection = new Api($this->container->getParameter('CONSUMERTWITKEY'), $this->container->getParameter('CONSUMERTWITSECRET'), $access_token['oauth_token'], $access_token['oauth_token_secret']);
-   			
-    				/* If method is set change API call made. Test is called by default. */
-    				$content = $connection->get('account/verify_credentials');
-    				//print_r($content);
-    				//var_dump($content);
-    				//var_dump($content->{'name'});
-                    //echo "<br/><br/>";
-                    
-                    $connection->host = 'https://api.twitter.com/1.1/'; // By default library uses API version 1.  
-                    //$friendsJson = $connection->get('/followers/list.json?cursor=-1&screen_name='.$content->{'screen_name'}.'&skip_status=true&include_user_entities=false');
-                    $friendsJson = $connection->get('/friends/list.json?cursor=-1&screen_name='.$content->{'screen_name'}.'&skip_status=true&include_user_entities=false');
-
-                    //echo "followers: "; print_r($friendsJson); die();
-                    //echo count($friendsJson);
-                    //echo $friendsJson->{'name'};
-                    //print_r($friendsJson->{'users'});
-
-                    $contacts=array();
-
-	                $k = 1;
-	                for($i=0; $i < count($friendsJson->{'users'}); $i++){
-		                //echo "\r\n";
-			               // echo "<div style='display:inline-block;padding:15px; vertical-align:middle;text-align:center'>";
-			                //echo $friendsJson->{'users'}[$i]->{'id'}."<br/>";
-			                //echo $friendsJson->{'users'}[$i]->{'name'}."<br/>";
-			              //  echo "<img src=".$friendsJson->{'users'}[$i]->{'profile_image_url'}." /><br/><input type='checkbox' checked name='contactid' id='contactid' value='".$friendsJson->{'users'}[$i]->{'id'}."'>";
-			               // echo $friendsJson->{'users'}[$i]->{'screen_name'}."</div>";		
-		                //echo "\r\n";
-
-		                //if($friendsJson->{'users'}[$i]->{'id_str'} == 1564400612){
-		                if($friendsJson->{'users'}[$i]->{'screen_name'} == 'PanDeTrigo1'){
-
-		                //if($friendsJson->{'users'}[$i]->{'id_str'} == 1205773753){
-		                //if($friendsJson->{'users'}[$i]->{'screen_name'} == 'PanDorado2000'){
-
-			                //////////////////////////////////////////////////////////////////////////////////////
-                            //$mess = urlencode("Join me at http://qubeey.com everything you care about can find you. Social,Buisness,Personal,Fun Qubeey connects it all.");
-                            $mess = "Join me at http://qubeey.com everything you care about can find you. Social,Buisness,Personal,Fun Qubeey connects it all.";
-                            $parameters = array('user_id' => $friendsJson->{'users'}[$i]->{'id'}, 'text' => $mess);
-                            $method = 'direct_messages/new';
-                           // $postfriends = $connection->post($method, $parameters);
-                        }
-
-                        $img1 = "<img src=".$friendsJson->{'users'}[$i]->{'profile_image_url'}.">";
-		               // $contacts[$friendsJson->{'users'}[$i]->{'id'}] = $img1 ."<br/>". $friendsJson->{'users'}[$i]->{'screen_name'}; //."\r\n";
-                        $contacts[trim($friendsJson->{'users'}[$i]->{'id'})] = trim($friendsJson->{'users'}[$i]->{'screen_name'});
-	                }
-//print_r($contacts);
-//die();
-                $this->_setSessionVar(array(
-		                self::SVAR_STEP     => self::STEP_INVITE,
-		                self::SVAR_SESSID   => $content->{'id'}, //$this->openinviter->plugin->getSessionID(),
-		                self::SVAR_PROVIDER => 'twitter', //$values['provider'],
-		                self::SVAR_EMAIL    => '', //$values['email'],
-		                self::SVAR_CONTACTS => $contacts,
-                ));
-
- //die();
-                return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
-
-	
-
-    				//// ************* ////
-    		die();
-    				$profile = new MemberProfile();
-    				$form = $this->createForm(new \Qubeey\WebBundle\Form\Member($profile), $member, array('validation_groups' => array('registration', 'Default')));
-    				return array(
-    				'member' => $member,
-    				'profile' => $profile,
-    				'form'   => $form->createView(),
-    						'tw_firstname' => $twname[0],
-    						'appId'  => $this->container->getParameter('FACEBOOK_APP_ID'),
-    								'memberaccount' => $access_token['oauth_token']."~:~".$access_token['oauth_token_secret']."~:~".$content->{'screen_name'},
-    								);
-    			
-    				} else {
-    				/* Save HTTP status for error dialog on connnect page. REDIRECT TO /oi/ */
-                    $url = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_login');
-    				header('Location: '.$url);
+    			//GET Friends
+    			//$friendsJson = $connection->get('/friends/list.json?cursor=-1&screen_name='.$content->{'screen_name'}.'&skip_status=true&include_user_entities=false');
+    			    
+    			$contacts=array();
+    
+    			$k = 1;
+    			for($i=0; $i < count($friendsJson->{'users'}); $i++){    
+    				$img1 = "<img src=".$friendsJson->{'users'}[$i]->{'profile_image_url'}.">";
+    					// $contacts[$friendsJson->{'users'}[$i]->{'id'}] = $img1 ."<br/>". $friendsJson->{'users'}[$i]->{'screen_name'}; //."\r\n";
+    					$contacts[trim($friendsJson->{'users'}[$i]->{'id'})] = trim($friendsJson->{'users'}[$i]->{'screen_name'});
     			}
-    						//***//
-    						exit(); return  $this->render('QubeeyWebBundle:Page:dummy.html.twig');
-    						    			
-			//////////////////////////////////////////////////////////////////////////////////////
+	    		//print_r($contacts); die();
+	    		$this->_setSessionVar(array(
+	    		self::SVAR_STEP     => self::STEP_INVITE,
+	    		self::SVAR_SESSID   => $content->{'id'}, //$this->openinviter->plugin->getSessionID(),
+	    		self::SVAR_PROVIDER => 'twitter', //$values['provider'],
+	    		self::SVAR_EMAIL    => '', //$values['email'],
+	    		self::SVAR_CONTACTS => $contacts,
+	    		));
+	    
+    			//die();
+    			return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
+    		}
     	}
+    
     	
-    	
-    	$request = $this->getRequest();
-        $connection = new Api($this->container->getParameter('CONSUMERTWITKEY'), $this->container->getParameter('CONSUMERTWITSECRET'));
-        $url = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_twtp', array('twt'=>'LST'));
-       // $logger = $this->get('logger');
-       // $logger->info($url);
-        
-        $request_token = $connection->getRequestToken($url);
+    	//// *************************************************************************************************************************** ////
+    		$request = $this->getRequest();
+    		$connection = new Api($this->container->getParameter('CONSUMERTWITKEY'), $this->container->getParameter('CONSUMERTWITSECRET'));
+    		$url = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath().$this->generateUrl('artseld_openinviter_twtp', array('twt'=>'LST'));
+    		$request_token = $connection->getRequestToken($url);
 
-        
-       //echo $url."<br/><br/>";
-       //print_r($request_token);
-       
-       //die();
-        /* Save temporary credentials to session. DO IT IN SYMFONY */
-        $_SESSION['oauth_token'] = $token = $request_token['oauth_token'];
-        $_SESSION['oauth_token_secret'] = $request_token['oauth_token_secret'];
-         
-        /* If last connection failed don't display authorization link. */
-        switch ($connection->http_code) {
-          case 200:
-            /* Build authorize URL and redirect user to Twitter. */
-            $url = $connection->getAuthorizeURL($token);
-            header('Location: ' . $url); // DO IT IN SYMFONY
-            break;
-          default:
-            /* Show notification if something went wrong. */
-            $this->errorcontent = 'Could not connect to Twitter. Refresh the page or try again later.';
-        }
-        //***//
-                return  $this->render('QubeeyWebBundle:Page:dummy.html.twig', array('returnerror' => $this->errorcontent));
-    }    
+    		/* Save temporary credentials to session. DO IT IN SYMFONY */
+    		$session->set('oauth_token', '');
+    		$session->set('oauth_token_secret', '');
+    		
+    		$session->set('oauth_token', $request_token['oauth_token']);
+    		$session->set('oauth_token_secret', $request_token['oauth_token_secret']);    		
+    		
+    		/* If last connection failed don't display authorization link. */
+    		switch ($connection->http_code) {
+    		case 200:
+    		/* Build authorize URL and redirect user to Twitter. */
+    		$url = $connection->getAuthorizeURL($session->get('oauth_token'));
+    		header('Location: ' . $url); // DO IT IN SYMFONY
+    		break;
+    		default:
+    		/* Show notification if something went wrong. */
+    		$this->errorcontent = 'Could not connect to Twitter. Refresh the page or try again later.';
+    		}
+    		
+    		
+    		//***//
+    		return  $this->render('QubeeyWebBundle:Page:dummy.html.twig', array('returnerror' => $this->errorcontent));
+    }
     //***************************************************************************************//
-    	
-   
+      
 //****************************************************************************************//
     /**
      * Facebook action
@@ -884,7 +579,7 @@ class DefaultController extends Controller
     	$this->_init();
     
     	$user = $this->get('security.context')->getToken()->getUser();
-    	//$id = $user->getMemberQid();  //var_dump($id); die;
+    	$id = $user->getMemberQid();  //var_dump($id); die;
     	//print_r($user);
     
     	//////////////////////////////////////////////////////////////////////////////////////
@@ -892,8 +587,7 @@ class DefaultController extends Controller
     	$response = new Response();
     	//echo "response: ";
     	//print_r($response);
-    	//echo "<br/><br/>";
-    
+    	//echo "<br/><br/>";    
     	$request = $this->getRequest();
     
     	$facebook = new Facebook(array(
@@ -906,55 +600,44 @@ class DefaultController extends Controller
     	$fbuser = $facebook->getUser();
     	$access_token = $facebook->getAccessToken();
     
-    	if(isset($access_token)){
-    		// echo "current token: "; print_r($access_token);
-    		// echo "<br/><br/><br/>";
-    
-    		$ch = curl_init();
-    		//curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/100006247597448?fields=name,email,friends.fields%28email,name%29&access_token=".$access_token);
-    		// curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/".$user."?fields=email,friends.fields%28username,email,name%29&access_token=".$access_token);
-    		//Above is the returned access token for the authirized user.
-    		
-    		//Below is the app's accesstoken 
-    		curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/".$fbuser."?fields=email,friends.fields%28username,email,name%29&access_token=292135030842967|da195cc276228e148c88080f58e406d3");
-    
-    
-    		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    		$output = curl_exec($ch);
-    		curl_close($ch);
-    		$emailscont = json_decode($output,true);
-    		// echo count($emailscont['friends']['data']);
-    
-    		//if (in_array("friends", $emailscont['friends']['data'])) {
-    			//print_r($emailscont); //die();
-    		//}
-    		//print_r($emailscont);
-    		$contacts=array();
-    		//print_r($emailscont['friends']['data']);
-    		if(isset($emailscont['friends']['data'])){
-    		foreach($emailscont['friends']['data'] as $indx=>$arrcont){
-    
-    		// print_r($arrcont);
-    
-    				if(array_key_exists('email', $arrcont)){
-    			//echo $arrcont['name']."--".$arrcont['username']."--".$arrcont['email']."--".$arrcont['id']."<br/>";
-    			$contacts[$arrcont['email']]=$arrcont['name'];
-    		}else{
-    		$contacts[$arrcont['username']."@facebook.com"]=$arrcont['name'];
-    		}
-    		/*
-    		echo"<br/>"; echo"<br/>"; echo"<br/>";
-    		foreach($arrcont as $name=>$val){
-    		echo "print friend: ".$name."=>".$val."<br/>";
-    
-    }
-    		echo"<br/>";
-    		*/
-    }
-    
-    		print_r($contacts);
-    }
-    }
+	    	if(isset($access_token)){
+	    		// echo "current token: "; print_r($access_token);
+	    		// echo "<br/><br/><br/>";
+	    
+	    		$ch = curl_init();
+	    		// curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/".$user."?fields=email,friends.fields%28username,email,name%29&access_token=".$access_token);
+	    		//Above is the returned access token for the authirized user.
+	    		$apptoken = $this->container->getParameter('FACEBOOK_APP_ID')."|".$this->container->getParameter('FACEBOOK_SECRET');
+	  
+	    		//Below is the app's accesstoken 
+	    		curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/".$fbuser."?fields=email,friends.fields%28username,email,name%29&access_token=".$apptoken);
+	    
+	    
+	    		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	    		$output = curl_exec($ch);
+	    		curl_close($ch);
+	    		$emailscont = json_decode($output,true);
+	    		// echo count($emailscont['friends']['data']);
+	    
+	    		//if (in_array("friends", $emailscont['friends']['data'])) {
+	    			//print_r($emailscont); //die();
+	    		//}
+	    		//print_r($emailscont);
+	    		$contacts=array();
+	    		//print_r($emailscont['friends']['data']);
+	    		if(isset($emailscont['friends']['data'])){    			
+		    		foreach($emailscont['friends']['data'] as $indx=>$arrcont){	    
+			    		if(array_key_exists('email', $arrcont)){
+			    			//echo $arrcont['name']."--".$arrcont['username']."--".$arrcont['email']."--".$arrcont['id']."<br/>";
+			    			$contacts[$arrcont['email']]=$arrcont['name'];
+			    		}else{
+			    			$contacts[$arrcont['username']."@facebook.com"]=$arrcont['name'];
+			    		}
+		    		}
+		    
+		    		//print_r($contacts); die();
+	    		}
+	    	}
     
     		//// ******************************************************* ////
     		// Login or logout url will be needed depending on current user state.
@@ -969,101 +652,49 @@ class DefaultController extends Controller
     		//setcookie("fbsr_YOUR_APP_ID",'',time()-10);
     			// *****************************************//
     		} else {
-    		//REQUEST FOLLOWING PERMISIONS WHEN LOGININ;
-    		//'email, publish_actions, publish_stream, read_stream, friends_likes, read_friendlists'
-    		$params = array(
-    				'scope' => 'email, publish_actions, publish_stream, read_friendlists',
-    				'redirect_uri' => $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath()."/app_dev.php/oi/facebook/",
-    				);
-    				//print_r($params);
-    
-    		$loginUrl = $facebook->getLoginUrl($params);
-    		
-    	//insert a twig view  and pass the array('fbl'=>$loginUrl) login url   
-    	//replacing the code below to a cutom look 	
-    		return $this->get('templating')->renderResponse(
-    				'ArtseldOpeninviterBundle:Default:facebook.html.twig', array(
-    						'fbl' => $loginUrl,
-    				));
-    		
-    		
-    		//echo "login: <a href=".$loginUrl.">LOGIN</a><br/><br/>";
-    		die();
-    		//$loginUrl = $facebook->getLoginUrl();
-    }
-    
-    //$currentuser = $facebook->api('/me/friends.fields(email)');
-    
-    		//echo "currentuser"; print_r($currentuser);
-   
-     
-    $this->_setSessionVar(array(
-    		self::SVAR_STEP     => self::STEP_INVITE,
-    		self::SVAR_SESSID   => '765123', //$this->openinviter->plugin->getSessionID(),
-    		self::SVAR_PROVIDER => 'facebook', //$values['provider'],
-    		self::SVAR_EMAIL    => '', //$values['email'],
-    		self::SVAR_CONTACTS => $contacts,
-    ));
-    
-    
-    return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
-    
-    
-    		die();
-    
-    		//////////////////////////////////////////////////////////////////////////////////////
-    		// if($user){
-    		 defined( $user->getMemberQid())? $id = $user->getMemberQid():'';
-    		$id = $user->getMemberQid();
-    		$username = $user->getUsername();
-    
-    
-    		//$ts = new \DateTime("now"); $new_time = date("Y-m-d H:m:s", strtotime('+1 hours', NOW())); print_r($new_time); die();
-    		if ($this->_getSessionVar(self::SVAR_STEP) != self::STEP_LOGIN) {
-    		$this->_clearSessionVar();
-    		$this->_setSessionVar(self::SVAR_STEP, self::STEP_LOGIN);
+	    		//REQUEST FOLLOWING PERMISIONS WHEN LOGININ;
+	    		//'email, publish_actions, publish_stream, read_stream, friends_likes, read_friendlists'
+	    		$params = array(
+	    				'scope' => 'email, publish_actions, publish_stream, read_friendlists',
+	    				'redirect_uri' => $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath()."/app_dev.php/oi/facebook/",
+	    				);
+	    				//print_r($params);
+	    
+	    		$loginUrl = $facebook->getLoginUrl($params);
+	    		header("Location: $loginUrl");
+	    		
+	    		
+	    		//insert a twig view  and pass the array('fbl'=>$loginUrl) login url   
+	    		//replacing the code below to a cutom look 	
+	    		return $this->get('templating')->renderResponse(
+	    				'ArtseldOpeninviterBundle:Default:facebook.html.twig', array(
+	    						'fbl' => $loginUrl,
+	    				));
+	    		die();
     		}
-    		$form = $this->get('form.factory')->create(new LoginFormType( $this->openinviter ));
-    		if ($request->getMethod() == 'POST') {
-    			$form->bindRequest($request);
     
-	    		if ($form->isValid()) {
-		    		$values = $form->getData();
-		    		$this->openinviter->startPlugin($values['provider']);
-		    		$internal = $this->openinviter->getInternalError();
-		    		if ($internal) {
-		    		$form->addError(new \Symfony\Component\Form\FormError( $this->_trans($internal) ));
-		    		} elseif (!$this->openinviter->login( $values['email'], $values['password'] )) {
-		    		$internal = $this->openinviter->getInternalError();
-		    		$form->addError(new \Symfony\Component\Form\FormError( $this->_trans(
-		    				// $internal ? $internal : $values["email"]." ".$values["password"].' - artseld_openinviter.notification.error.incorrect_login'
-		    				$internal ? $internal : 'artseld_openinviter.notification.error.incorrect_login'
-		    				)));
-		    		} elseif (false === $contacts = $this->openinviter->getMyContacts()) {
-		    		$form->addError(new \Symfony\Component\Form\FormError(
-		    				$this->_trans('artseld_openinviter.notification.error.cannot_get_contacts')
-		    		));
-		    		} else {
-		    		$this->_setSessionVar(array(
-		    				self::SVAR_STEP     => self::STEP_INVITE,
-		    				self::SVAR_SESSID   => $this->openinviter->plugin->getSessionID(),
-		    				self::SVAR_PROVIDER => $values['provider'],
-		    				self::SVAR_EMAIL    => $values['email'],
-		    				self::SVAR_CONTACTS => $contacts,
-		    				));
-		    				return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
-				    }
-			    }
+		    //$currentuser = $facebook->api('/me/friends.fields(email)');
+		    //echo "currentuser"; print_r($currentuser);
+		     
+		    $this->_setSessionVar(array(
+		    		self::SVAR_STEP     => self::STEP_INVITE,
+		    		self::SVAR_SESSID   => mt_rand(), //'765123', //$this->openinviter->plugin->getSessionID(),
+		    		self::SVAR_PROVIDER => 'facebook', //$values['provider'],
+		    		self::SVAR_EMAIL    => '', //$values['email'],
+		    		self::SVAR_CONTACTS => $contacts,
+		    ));
+		    
+		    if ($fbuser) {
+		    	// *****************************************//
+		    	//MANNUAL LOGOUT
+		    	//$facebook -> destroySession();
+		    	//setcookie("fbsr_YOUR_APP_ID",'',time()-10);
+		    	// *****************************************//
 		    }
 		    
-    				return $this->get('templating')->renderResponse(
-				    'ArtseldOpeninviterBundle:Default:login.html.twig', array(
-				    'login_form' => $form->createView(),
-				    ));
+		    return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));    
+    		die();
     
-    //}else {
-    //return $this->redirect($this->generateUrl('page_homepage'));
-    //}
     }
     
     //====================================================  Vimeo Action ==================================================//
@@ -1426,7 +1057,7 @@ class DefaultController extends Controller
                     //echo "<br/><br/>"; echo "sess ".$sess; echo "<br/><br/>"; 
                     //print_r($session);
                     $id=1457007;
-                    $categories = $this->getDoctrine()->getRepository('QubeeyApiBundle:Entitycategory')->findBy(array('entityQid' => 1457007));
+                    $categories = $this->getDoctrine()->getRepository('QubeeyApiBundle:Entitycategory')->findBy(array('entityQid' => $id));
                     if(count($categories)>0) {
                     	$x=0;
                     	foreach ($categories AS $category) {
@@ -1489,11 +1120,22 @@ class DefaultController extends Controller
                     $this->openinviter->logout(); 
                     
                     /////////////////// ******** PROVIDERS ********* ///////////////////
+                   // echo $this->_getSessionVar(self::SVAR_PROVIDER); die();
+                   
+                    
+                    
                     
                     ////////////////////////////// faceBook //////////////////////////////////
-                    if($this->_getSessionVar(self::SVAR_PROVIDER) == 'facebook'){ $sendMessage = -1; }                    
+                    if($this->_getSessionVar(self::SVAR_PROVIDER) == 'facebook'){ $sendMessage = -1; }
                     
-                    ////////////////////////////// Twitter //////////////////////////////////                    
+                    
+                    ////////////////////////////// Live //////////////////////////////////
+                    if($this->_getSessionVar(self::SVAR_PROVIDER) == 'hotmail'){ $sendMessage = -1; }                    
+                    
+                    ////////////////////////////// yahoo //////////////////////////////////
+                    if($this->_getSessionVar(self::SVAR_PROVIDER) == 'yahoo'){ $sendMessage = -1; }
+                    
+                    //////////////////////////////**** Twitter ****//////////////////////////////////                    
                     if($this->_getSessionVar(self::SVAR_PROVIDER) == 'twitter'){
                     	$connection = new Api($this->container->getParameter('CONSUMERTWITKEY'), $this->container->getParameter('CONSUMERTWITSECRET'), $_SESSION['access_token']['oauth_token'], $_SESSION['access_token']['oauth_token_secret']);
                     	$content = $connection->get('account/verify_credentials');   
@@ -1502,33 +1144,34 @@ class DefaultController extends Controller
                     	//Message must be less than 140 characters
                         foreach($selectedContacts as $emailid=>$username){
                             $mess = "Join me at http://qubeey.com everything you care about can find you. Social,Buisness,Personal,Fun Qubeey connects it all.";
+                            
                             $method = 'direct_messages/new'; 
                             $parameters = array('user_id' => $emailid, 'text' => $mess);
                             print_r($parameters); echo "<br/><br/>";
                            // $postfriends = $connection->post($method, $parameters);
                         }
-						$this->_setFlash(self::FLASH_SUCCESS, 'Qubeey sent your invitaions successfully.');
+						$this->_setFlash(self::FLASH_SUCCESS, 'Qubeey sent your Twitter invitaions successfully.');
                     	//die();
                    }
-                  ////////////////////////////// Linkedin ////////////////////////////////// 
+                   
+                   
+                  //////////////////////////////**** Linkedin ****////////////////////////////////// 
                    if($this->_getSessionVar(self::SVAR_PROVIDER) == 'linkedin'){
-	                 	$user = $this->fetch('GET', '/v1/people/~/connections');                  
+	                 	$user = $linkedin->fetch('GET', '/v1/people/~/connections');                  
 	                  	//print_r($user); die();                  		
 	                  	foreach($selectedContacts as $emailid=>$username){        		
-		        		//////////////////////////////////// SEND LINKEDIN MESSAGE ///////////////////////////////////////        	
+		        		//*********************** SEND LINKEDIN MESSAGE *******************************//        	
 		        		$subject= "Hello come join me at qubeey.com!";
-		        		$body= "Hello ".$username."!  Join me at http://www.qubeey.com/".$source;        		
-		        		//$postrespose =  $this->sendMessageById($emailid, $ccUser=false, $subject, $body); 
-		        		echo 'Subject: '.$subject.' <br/> Body: '.$body.'<br/><br/>';      		
+		        		$body= "Hello ".$username."!  Join me at http://www.qubeey.com/".$source;		        		
+		        		echo 'Subject: '.$subject.' <br/> Body: '.$body.'<br/><br/>';
+		        		//$postrespose =  $linkedin->sendMessageById($emailid, $ccUser=false, $subject, $body); 
+		        		     		
 		        		/////////////////////////////////////////////////////////////////////////////////////////////////
-	        			} die();
-	                  	$this->_setFlash(self::FLASH_SUCCESS, 'Qubeey sent your invitaions successfully.');              			
+	        			} //die();
+	                  	$this->_setFlash(self::FLASH_SUCCESS, 'Qubeey sent your Linkedin invitaions successfully.');              			
                		}
                   //////////////////////////////////////////////////////////////////////  
 
-               		
-               		
-                    	//echo "almost: "; print_r($sendMessage); die();
                     	if ($sendMessage === -1) {
 
                // ********************************************** //
