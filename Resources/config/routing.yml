@@ -3,7 +3,7 @@
 artseld_openinviter_login:
     pattern: /
     defaults: { _controller: ArtseldOpeninviterBundle:Default:login }
-
+    
 artseld_openinviter_invite:
     pattern: /invite/
     defaults: { _controller: ArtseldOpeninviterBundle:Default:invite }
@@ -20,20 +20,26 @@ artseld_openinviter_fb:
     pattern: /facebook/
     defaults: { _controller: ArtseldOpeninviterBundle:Default:facebook }
     #requirements:
-    #    _method:  POST
+    #    _method:  POST  
+        
+artseld_openinviter_fbp:
+    pattern: /facebook/{lcb}
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:facebook }
+    #requirements:
+    #    _method:  POST   
     
 artseld_openinviter_twt:
     pattern: /twitter/
     defaults: { _controller: ArtseldOpeninviterBundle:Default:twitter }
     #requirements:
-    #    _method:  POST    
-
+    #    _method:  POST  
+        
 artseld_openinviter_twtp:
     pattern: /twitter/{twt}
     defaults: { _controller: ArtseldOpeninviterBundle:Default:twitter }
-    requirements:
-    #    _method:  POST     
-
+    #requirements:
+    #    _method:  POST   
+    
 artseld_openinviter_linkedin:
     pattern: /linkedin/
     defaults: { _controller: ArtseldOpeninviterBundle:Default:linkedin }
@@ -44,34 +50,41 @@ artseld_openinviter_linkedincb:
     pattern: /linkedin/{lcb}
     defaults: { _controller: ArtseldOpeninviterBundle:Default:linkedin }
     requirements:
-    #    _method:  POST 
-
-artseld_openinviter_live:
-    pattern: /live/
-    defaults: { _controller: ArtseldOpeninviterBundle:Default:live }
-    requirements:
-    #    _method:  POST  
-    
-artseld_openinviter_livecb:
-    pattern: /live/{lcb}
-    defaults: { _controller: ArtseldOpeninviterBundle:Default:live }
-    requirements:
     #    _method:  POST    
+    
+artseld_openinviter_youtube:
+    pattern: /youtube/
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:youtube }
+    #requirements:
+    #    _method:  POST  
+        
+artseld_openinviter_youtubecb:
+    pattern: /youtube/{user}
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:youtube }
+    #requirements:
+    #    _method:  POST    
+    
+artseld_openinviter_vimeo:
+    pattern: /vimeo/
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:vimeo }
+    #requirements:
+    #    _method:  POST 
+ 
+artseld_openinviter_vimeovm:
+    pattern: /vimeo/{vmo}
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:vimeo }
+    #requirements:
+    #    _method:  POST 
+        
+artseld_openinviter_gmail:
+    pattern: /gmail/
+    defaults: { _controller: ArtseldOpeninviterBundle:Default:gmail }
+    requirements:
+    #    _method:  POST 
     
 artseld_openinviter_yahoo:
     pattern: /yahoo/
     defaults: { _controller: ArtseldOpeninviterBundle:Default:yahoo }
     requirements:
-    #    _method:  POST  
-    
-artseld_openinviter_yahoocb:
-    pattern: /yahoo/{ycb}
-    defaults: { _controller: ArtseldOpeninviterBundle:Default:yahoo }
-    requirements:
-    #    _method:  POST  
-    
-artseld_openinviter_gmail:
-    pattern: /gmail/
-    defaults: { _controller: ArtseldOpeninviterBundle:Default:gmail }
-    requirements:
-    #    _method:  POST               
+    #    _method:  POST            
+          

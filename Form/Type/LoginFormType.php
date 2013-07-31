@@ -28,19 +28,23 @@ class LoginFormType extends AbstractType
         $builder
             ->add('email', 'text', array(
                 'required' => true,
-                'label' => 'artseld_openinviter.label.email',
+                'label' => 'Email',
             ))
             ->add('password', 'password', array(
                 'required' => true,
-                'label' => 'artseld_openinviter.label.password',
+                'label' => 'Password',
             ))
-            ->add('provider', 'choice', array(
-                'required' => true,
-                'label' => 'artseld_openinviter.label.provider',
-                'multiple' => false,
-                'expanded' => false,
-                'choices' => $this->getProviderChoices(),
+           /* ->add('provider', 'hidden', array(
+            		'data' => '',
             ))
+           
+        ->add('provider', 'choice', array(
+        		'required' => true,
+        		'label' => '',
+        		'multiple' => false,
+        		'expanded' => false,
+        		'choices' => $this->getProviderChoices(),
+        ))*/
         ;
     }
 
@@ -52,13 +56,19 @@ class LoginFormType extends AbstractType
     protected function getProviderChoices()
     {
         $choices = array();
+        //$limited_choices = array("AOL", "GMail", "Live/Hotmail", "LinkedIn", "Plaxo", "MSN", "Yahoo!", "YouTube", "Facebook", "Flickr", "Twitter", "Vimeo" );
+        $limited_choices = array("AOL", "GMail", "Live/Hotmail", "LinkedIn", "MSN", "Outlook", "Yahoo!", "YouTube", "Facebook", "Flickr", "Twitter", "Vimeo" );
+       
+        
         foreach ($this->openinviter->getPlugins() as $type => $providers)
         {
             // Email Providers, Social Networks
             $choices['artseld_openinviter.label.type_' . $type] = array();
             foreach ($providers as $provider => $details)
             {
-                $choices['artseld_openinviter.label.type_' . $type][$provider] = $details['name'];
+            	if (in_array($details['name'], $limited_choices)) {
+                   $choices['artseld_openinviter.label.type_' . $type][$provider] = $details['name']; 
+            	}
             }
         }
 

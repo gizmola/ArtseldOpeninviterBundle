@@ -697,225 +697,160 @@ class DefaultController extends Controller
     
     }
     
-    //====================================================  Vimeo Action ==================================================//
+//====================================================  Vimeo Action ==================================================//
     /**
      * Vimeo action
      * @param \Symfony\Component\HttpFoundation\Request $request
      * @return \Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function vimeoAction(Request $request, $user)
+    public function vimeoAction(Request $request, $vmo=false)
     {
-    	$this->_init();
-    
-    	$member = $this->get('security.context')->getToken()->getUser();
-    	$id = $member->getMemberQid();  //var_dump($id); die;
-    
-    	//////////////////////////////////////////////////////////////////////////////////////
-    
-    	$response = new Response();
-    
-    	$request = $this->getRequest();
-    	$redirect_url =  $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath();
-    	//$url = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath() . $this->generateUrl('artseld_openinviter_login');
-    	$url = $request->getScheme().'://'.$request->getHttpHost().$request->getBasePath().$this->generateUrl('artseld_openinviter_vimeo', array('user'=>'olechka'));
-    
-    	//$_consumer_key    = '70418d113d90a73b7fe63fbd18f46985c2c4f6e7';  // Client ID (Also known as Consumer Key or API Key)
-    	//$_consumer_secret = '5a7aff371bed7ca71b3a30a9ea4a1da0d1a9f38f';  // Client Secret (Also known as Consumer Secret or API Secret)
-    	//$_token           = '318d1b37e3fbb2e2abce499876054d01';          // Access token
-    	//$_token_secret    = 'f835c4de75ad41d8e85e9bec54673fd3d8c8cbc7';  // Access token secret     // guard this!
-    	$_consumer_key    = $this->container->getParameter('VIMEO_CONSUMER_KEY');
-    	$_consumer_secret = $this->container->getParameter('VIMEO_CONSUMER_SECRET');
-    	$_token           = $this->container->getParameter('VIMEO_ACCESS_TOKEN');    //echo "<br />AccessToken: " . $_token;
-    	$_token_secret    = $this->container->getParameter('VIMEO_TOKEN_SECRET');
-    
-    	//echo "<br />TOKEN: " . $this->container->getParameter('VIMEO_ACCESS_TOKEN');
-    
-    	$API_REST_URL          = 'http://vimeo.com/api/rest/v2';
-    	$API_AUTH_URL          = 'http://vimeo.com/oauth/authorize';      // Authorize URL
-    	$API_ACCESS_TOKEN_URL  = 'http://vimeo.com/oauth/access_token';   // Access Token URL
-    	$API_REQUEST_TOKEN_URL = 'http://vimeo.com/oauth/request_token';  // Request Token URL
-    
-    	// echo  $this->get('kernel')->getRootDir(); echo "<br/>";
-    	// echo  $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $request->getBasePath();  //home2/olga/serverWeb/app/../web/dev
-    	// die();
-    	$path= $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $this->getRequest()->getBasePath();
-    
-    	$this->_cache_dir = $path;     //echo "<br /><br />Path from class: " . getcwd();
-    	//$files = scandir($this->_cache_dir);
-    
-    	$filename = $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $this->getRequest()->getBasePath(); // . $this->getRequest()->getBasePath();
-    
-    	if (file_exists($filename)) {
-    		echo "<br /><br />The file $filename exists";
-    } else {
-    	echo "<br /><br />The file $filename does not exist";
-    }
-    //die();
-    		//====================================================== simple api interface ====================================================================//
-    
-    		$vim = new \Qubeey\ApiBundle\Utility\Vimeo($_consumer_key, $_consumer_secret, $_token, $_token_secret);   print_r($vim);
-    
-    		$params = array(1);//vimeo.contacts.getAll
-    		//
-    		$vim->setToken($_token, $_token_secret);
-    		$token = $vim->getRequestToken();  echo "<br /><br />I am here: <br />" . print_r($token);
-    //$vim->getAccessToken('olechka');
-    $vim->getAuthorizeUrl($_consumer_key);
-    $vim->auth('read', 'http://nginx1.qubedev.com:7031/app_dev.php/oi/invite');
-    echo $vim->call('vimeo.contacts.getAll', $params);
-    //echo md5(uniqid(microtime()));
-    
-    //================================================================================================================================================//
-    
-    
-    // Create the object and enable caching
-    //$vimeo = new \Qubeey\ApiBundle\Utility\Vimeo($_consumer_key, $_consumer_secret, $_token, $_token_secret);
-    ///$vimeo = new \Qubeey\ApiBundle\Utility\Vimeo($this->container->getParameter('VIMEO_CONSUMER_KEY'), $this->container->getParameter('VIMEO_CONSUMER_SECRET'),$_token, $_token_secret);
-    //$vimeo->enableCache(\Qubeey\ApiBundle\Utility\Vimeo::CACHE_FILE, $path, 300);
-    //$vimeo->enableCache(phpVimeo::CACHE_FILE, './cache', 300);
-    //echo "<br /><br />Vimeo: ";
-    //print_r($vimeo); die();
-    
-    	/* Save the access tokens. Normally these would be saved in a database for future use.  DO IT IN SYMFONY */
-    // Set up variables
-    //$state = 'start';
-    
-    //$state = $_SESSION['vimeo_state'];                   //echo "<br />Vimeo State: " . $_SESSION['vimeo_state'];
-    $request_token = $_SESSION['oauth_request_token'];   //echo "<br />Vimeo oauth_request_token: " . $_SESSION['oauth_request_token'];
-    $access_token = $_SESSION['oauth_access_token'];     //echo "<br />Vimeo oauth_access_token: " . $_SESSION['oauth_access_token'];
-    
-    echo "<br /><br />Vimeo: ";
-    print_r($vimeo); //die();
-    echo "<br /><br />Oauth Token: " . $_REQUEST['oauth_token'];
+        $this->_init();
+   
+        $member = $this->get('security.context')->getToken()->getUser();
+        //$id = $member->getMemberQid();  //var_dump($id); die;
+             
+        //////////////////////////////////////////////////////////////////////////////////////
+       
+        $response = new Response();
+        if(isset($vmo) && $vmo == 'VMO'){
+        		echo "START 0</br/>";  die();
+        }
+        
+        $request = $this->getRequest();
+        $redirect_url =  $request->getScheme().'://'.$request->getHttpHost().$request->getBasePath().$this->generateUrl('artseld_openinviter_login').'invite';             ///echo "RedirectURL: " .$redirect_url ."<br />";
+        $url = $request->getScheme().'://'.$request->getHttpHost().$request->getBasePath().$this->generateUrl('artseld_openinviter_vimeovm', array('vmo'=>'VMO'));         ///echo "URL: " . $url ."<br />";
+ 
+	    $_consumer_key    = $this->container->getParameter('VIMEO_CONSUMER_KEY');     // Client ID (Also known as Consumer Key or API Key)
+    	$_consumer_secret = $this->container->getParameter('VIMEO_CONSUMER_SECRET');  // Client Secret (Also known as Consumer Secret or API Secret)
+    	$_token           = $this->container->getParameter('VIMEO_ACCESS_TOKEN');     // Access token
+    	$_token_secret    = $this->container->getParameter('VIMEO_TOKEN_SECRET');     // Access token secret     // guard this!
+                 
+        $API_REST_URL          = 'http://vimeo.com/api/rest/v2';
+        $API_AUTH_URL          = 'http://vimeo.com/oauth/authorize';      // Authorize URL
+        $API_ACCESS_TOKEN_URL  = 'http://vimeo.com/oauth/access_token';   // Access Token URL
+        $API_REQUEST_TOKEN_URL = 'http://vimeo.com/oauth/request_token';  // Request Token URL
+
+        $path = $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $this->getRequest()->getBasePath();       
+        $this->_cache_dir = $path;     
+
+        //====================================================== simple api interface ====================================================================//
+        $params = array(1); 
+       
+        // Create the object and enable caching
+        // 1. Get a request token
+        $vimeo = new \Qubeey\ApiBundle\Utility\Vimeo($_consumer_key, $_consumer_secret, $_token, $_token_secret);
+        $vimeo->enableCache(\Qubeey\ApiBundle\Utility\Vimeo::CACHE_FILE, $path, 300);
+        $token = $vimeo->getRequestToken();  echo "<br /><br />";    //print_r($token); 
+        //Store in session, or wherever you like-- these are temporary, so doesn't matter.
+        $_SESSION['oauth_request_token'] = $token['oauth_token'];               echo "<br />OAUTH TOKEN: " . $token['oauth_token'];
+        $_SESSION['oauth_request_token_secret'] = $token['oauth_token_secret']; echo "<br />OAUTH SECRET TOKEN: " . $token['oauth_token_secret'];
+        
+        // 2. Request authorization
+        $authorize_link = $vimeo->getAuthorizeUrl($_SESSION['oauth_request_token'], 'write');          echo "<br /><b>AutorizeURL:</b> " .$authorize_link;
+        $callback_url = $vimeo->auth('read', 'http://nginx1.qubedev.com:7031/app_dev.php/oi/invite');  echo "<br /><b>CallbackURL:</b> " .$callback_url;
+       
+        die(); 
+        //================================================================================================================================================//
+        /*
+        // Create the object and enable caching
+        $vimeo = new \Qubeey\ApiBundle\Utility\Vimeo($_consumer_key, $_consumer_secret, $_token, $_token_secret);
+        $vimeo->enableCache(\Qubeey\ApiBundle\Utility\Vimeo::CACHE_FILE, $path, 300);
+        $vimeo->setToken($_token, $_token_secret);
+        $token = $vimeo->getRequestToken();  echo "<br /><br />";  print_r($token);
+ 
+         
+        // Store it in the session
+        $_SESSION['oauth_request_token'] = $token['oauth_token'];
+        $_SESSION['oauth_request_token_secret'] = $token['oauth_token_secret'];
+        $_SESSION['vimeo_state'] = 'start';
+
+        switch ($_SESSION['vimeo_state']) {
+            default:
+       
+            // Get a new request token
+            // $token = $vimeo->getRequestToken();
+       
+            // Store it in the session
+            $_SESSION['oauth_request_token'] = $token['oauth_token'];
+            $_SESSION['oauth_request_token_secret'] = $token['oauth_token_secret'];
+            $_SESSION['vimeo_state'] = 'start';
+       
+            // Build authorize link
+            $authorize_link = $vimeo->getAuthorizeUrl($token['oauth_token'], 'read');  echo "<br />AutorizeURL: " .$authorize_link;
+       
+            break;
+       
+            case 'returned':
+                echo "<br />Vimeo State1: " . $_SESSION['vimeo_state'];
+                // Store it
+                if ($_SESSION['oauth_access_token'] === NULL && $_SESSION['oauth_access_token_secret'] === NULL) {
+                    // Exchange for an access token
+                    $vimeo->setToken($_SESSION['oauth_request_token'], $_SESSION['oauth_request_token_secret']);
+                    $token = $vimeo->getAccessToken($_REQUEST['oauth_verifier']);
+       
+                    // Store
+                    $_SESSION['oauth_access_token'] = $token['oauth_token'];   echo "SESSION access token: " . $_SESSION['oauth_access_token'];
+                    $_SESSION['oauth_access_token_secret'] = $token['oauth_token_secret'];
+                    $_SESSION['vimeo_state'] = 'done';
+       
+                    // Set the token
+                    $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']); 
+                    echo "Tokens: " . $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']);
+                }
+       
+                // Do an authenticated call
+                try {
+                    $videos = $vimeo->call('vimeo.videos.getUploaded');
+                }
+                catch (VimeoAPIException $e) {
+                    echo "Encountered an API error -- code {$e->getCode()} - {$e->getMessage()}";
+        }
+       
+        break;
+        }       
+       */
+       
+        // Coming back
+        //if ($token['oauth_token'] != NULL && $_SESSION['vimeo_state'] === 'start') {
+        //    $_SESSION['vimeo_state'] = $state = 'returned';
+        //}
+        //echo "<br />Vimeo State: " . $_SESSION['vimeo_state'];
+               
+        // If we have an access token, set it
+        /*if (isset($_SESSION['oauth_access_token']) && ($_SESSION['oauth_access_token'] != null)) {
+            $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']);  echo "IF access token: " . $_SESSION['oauth_access_token'];
+        }       
+        else{
+            echo "ELSE access token: " . $_SESSION['oauth_access_token'];
+        }
+        die();
+        /* Save the access tokens. Normally these would be saved in a database for future use.  DO IT IN SYMFONY */
+        // Set up variables       
+        /*$token = $vimeo->getRequestToken();
+        $vimeo->getAuthorizeUrl($_consumer_key);
+        $vimeo->auth('read', 'http://nginx1.qubedev.com:7031/app_dev.php/oi/invite');
+        //$state = $_SESSION['vimeo_state'];                   //echo "<br />Vimeo State: " . $_SESSION['vimeo_state'];
+        //$request_token = $_SESSION['oauth_request_token'];     //echo "<br />Vimeo oauth_request_token: " . $_SESSION['oauth_request_token'];
+        //$access_token = $_SESSION['oauth_access_token'];       //echo "<br />Vimeo oauth_access_token: " . $_SESSION['oauth_access_token'];
+       
+        echo "<br /><br />Vimeo State: " .  $_SESSION['vimeo_state'];
+        print_r($vimeo); die(); */
+      
     /************************************************************************************************************************************************/
-    /*
-    // Coming back
-    if ($_REQUEST['oauth_token'] != NULL && $_SESSION['vimeo_state'] === 'start') {
-    $_SESSION['vimeo_state'] = $state = 'returned';
-    }
-    
-    // If we have an access token, set it
-    if (isset($_SESSION['oauth_access_token']) && ($_SESSION['oauth_access_token'] != null)) {
-    $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']);  echo "access token: " . $_SESSION['oauth_access_token'];
-    }
-    
-    switch ($_SESSION['vimeo_state']) {
-    default:
-    
-    // Get a new request token
-    $token = $vimeo->getRequestToken();  echo "<br /><br />I am here: " . print_r($token);
-    
-    // Store it in the session
-    $_SESSION['oauth_request_token'] = $token['oauth_token'];
-    $_SESSION['oauth_request_token_secret'] = $token['oauth_token_secret'];
-    $_SESSION['vimeo_state'] = 'start';
-    
-    // Build authorize link
-    $authorize_link = $vimeo->getAuthorizeUrl($token['oauth_token'], 'write');
-    
-    break;
-    
-    case 'returned':
-    
-    // Store it
-    if ($_SESSION['oauth_access_token'] === NULL && $_SESSION['oauth_access_token_secret'] === NULL) {
-    // Exchange for an access token
-    $vimeo->setToken($_SESSION['oauth_request_token'], $_SESSION['oauth_request_token_secret']);
-    $token = $vimeo->getAccessTokenVim($_REQUEST['oauth_verifier']);
-    
-    // Store
-    $_SESSION['oauth_access_token'] = $token['oauth_token'];
-    $_SESSION['oauth_access_token_secret'] = $token['oauth_token_secret'];
-    $_SESSION['vimeo_state'] = 'done';
-    
-    // Set the token
-    $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']);
-    }
-    
-    // Do an authenticated call
-    try {
-    $videos = $vimeo->call('vimeo.videos.getUploaded');
-    }
-    catch (VimeoAPIException $e) {
-    echo "Encountered an API error -- code {$e->getCode()} - {$e->getMessage()}";
-    }
-    
-    break;
-    
-    }
-    //*********************************************************************************************************************/
-    
-    // Change this to your username to load in your videos
-    // $vimeo_user_name = ($_GET['user']) ? $_GET['user'] : 'olechka';
-    $vimeo_user_name = $user ? $user : 'olechka';
-    
-    // API endpoint
-    $api_endpoint = 'http://vimeo.com/api/v2/' . $vimeo_user_name;
-    
-    // Curl helper function
-    function curl_get($url) {
-    $curl = curl_init($url);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($curl, CURLOPT_TIMEOUT, 30);
-    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
-    $return = curl_exec($curl);
-    curl_close($curl);
-    return $return;
-    }
-    
-    // Load the user info and clips
-    $user = simplexml_load_string(curl_get($api_endpoint . '/info.xml'));
-    $videos = simplexml_load_string(curl_get($api_endpoint . '/videos.xml'));
-    
-    $output = '';
-    $output .= '<h1>Vimeo API PHP Example</h1>';
-    $output .= '<div id="stats">';
-    $output .= '<img id="portrait" src="'. $user->user->portrait_small .'" />';
-    $output .= '<h2>'. $user->user->display_name.'\'s Videos</h2>';
-    $output .= '</div>';
-    $output .= '<p id="bio">'. $user->user->bio .'</p>';
-    $output .= '<div id="thumbs">';
-    $output .= '<ul>';
-    foreach ($videos->video as $video) {
-    $output .= '<li>';
-    $output .= '<a href="'. $video->url .'"><img src="'. $video->thumbnail_medium .'" /></a>';
-    $output .= '</li>';
-    }
-    $output .= '</ul>';
-    $output .= '</div>';
-    //========================================================================================
-    /*
-    $output .= '<h1>Vimeo Advanced API OAuth Example</h1>';
-    $output .= '<p>This is a basic example of Vimeo\'s new OAuth authentication method.
-    Everything is saved in session vars, so <a href="?clear=all">click here if you want to start over</a>.</p>';
-    
-    if ($_SESSION['vimeo_state'] == 'start') {
-    $output .= '<p>Click the link to go to Vimeo to authorize your account.</p>';
-    $output .= '<p><a href="'.$authorize_link.'">'.$authorize_link.'</a></p>';
-    }
-    
-    if ($ticket) {
-    $output .= '<pre>'. print_r($ticket) .'</pre>';
-    }
-    
-    if ($videos) {
-    $output .= '<pre>'. print_r($videos) .'</pre>';
-    }
-    */
-    //=======================================================================================
-    
-    
-    echo $output;
+
+    //echo $output;
     //die();
-    return $this->get('templating')->renderResponse(
-    'ArtseldOpeninviterBundle:Default:done.html.twig', array('output'=> $output
-    ));
-    
+    // return $this->get('templating')->renderResponse('ArtseldOpeninviterBundle:Default:done.html.twig', array('output'=> $output));
+     return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
     }
+   
+   
+ 
+    //==================================================== End Vimeo Action =============================================//  
+
     
     
-    
-    //==================================================== End Vimeo Action =============================================//    
 //***************************************************************************************//
     /**
      * Login action
@@ -926,15 +861,14 @@ class DefaultController extends Controller
     {
         $this->_init();
         
-        $user = $this->get('security.context')->getToken()->getUser();
-        //$id = $user->getMemberQid();  //var_dump($id); die;
-        //print_r($user);
+        $request = $this->getRequest();
+        $session = $request->getSession();  
         
-       // if($user){
-	       // defined( $user->getMemberQid())? $id = $user->getMemberQid():'';
-        	$id = $user->getMemberQid();
-	        $username = $user->getUsername();
-	        
+        $user = $this->get('security.context')->getToken()->getUser();
+        
+        if ($user != "anon.") {
+         
+         $id = $user->getMemberQid();  //var_dump($id); die();
 	        
 	        //$ts = new \DateTime("now"); $new_time = date("Y-m-d H:m:s", strtotime('+1 hours', NOW())); print_r($new_time); die();
 	        if ($this->_getSessionVar(self::SVAR_STEP) != self::STEP_LOGIN) {
@@ -955,11 +889,11 @@ class DefaultController extends Controller
 	                    $internal = $this->openinviter->getInternalError();
 	                    $form->addError(new \Symfony\Component\Form\FormError( $this->_trans(
 	                       // $internal ? $internal : $values["email"]." ".$values["password"].' - artseld_openinviter.notification.error.incorrect_login'
-	                    $internal ? $internal : 'artseld_openinviter.notification.error.incorrect_login'
+	                    $internal ? $internal : 'Incorrect login. Please check E-mail and password and try again.'
 	                    )));
 	                } elseif (false === $contacts = $this->openinviter->getMyContacts()) {
 	                    $form->addError(new \Symfony\Component\Form\FormError(
-	                        $this->_trans('artseld_openinviter.notification.error.cannot_get_contacts')
+	                        $this->_trans('Cannot get contacts!')
 	                    ));
 	                } else {
 	                    $this->_setSessionVar(array(
@@ -979,9 +913,9 @@ class DefaultController extends Controller
 	                'login_form' => $form->createView(),
 	            ));
         
-    	//}else {
-    		//return $this->redirect($this->generateUrl('page_homepage'));
-    	//}
+    	}else {
+    		return $this->redirect($this->generateUrl('_login'));
+    	}
     }
 
     
@@ -1020,7 +954,7 @@ class DefaultController extends Controller
                 } else {
                     if (empty($values['email'])) {
                         $form->addError(new \Symfony\Component\Form\FormError(
-                            $this->_trans('artseld_openinviter.notification.error.email_not_set')
+                            $this->_trans('Sender E-mail is not set!')
                         ));
                     }
                     
@@ -1028,7 +962,7 @@ class DefaultController extends Controller
                     //echo "session :". $sessid;
                     if (empty($sessid)) {
                         $form->addError(new \Symfony\Component\Form\FormError(
-                            $this->_trans('artseld_openinviter.notification.error.no_active_session')
+                            $this->_trans('Session is not active!')
                         ));
                     }
                     
@@ -1107,7 +1041,7 @@ class DefaultController extends Controller
                         }
                         if (count($selectedContacts) == 0) {
                             $form->addError(new \Symfony\Component\Form\FormError(
-                                $this->_trans('artseld_openinviter.notification.error.contacts_not_selected')
+                                $this->_trans('You did not choose any contacts for inviting!')
                             ));
                         }
                     }  
@@ -1143,7 +1077,7 @@ class DefaultController extends Controller
 
                     	//Message must be less than 140 characters
                         foreach($selectedContacts as $emailid=>$username){
-                            $mess = "Join me at http://qubeey.com everything you care about can find you. Social,Buisness,Personal,Fun Qubeey connects it all.";
+                            $mess = "Join me at http://qubeey.com everything you care about can find you. Social, Buisness, Personal, Fun Qubeey connects it all.";
                             
                             $method = 'direct_messages/new'; 
                             $parameters = array('user_id' => $emailid, 'text' => $mess);
@@ -1198,10 +1132,10 @@ class DefaultController extends Controller
                             : 'artseld_openinviter.notification.error.invitations_with_errors'
                         );
                     } else {
-                        $this->_setFlash(self::FLASH_SUCCESS, 'artseld_openinviter.notification.success.invitations_sent');
+                        $this->_setFlash(self::FLASH_SUCCESS, 'Qubeey sent your invitaions successfully.');
                     }
                     return new RedirectResponse($this->generateUrl('artseld_openinviter_done'));
-                } echo "cant: ";  die();
+                } //echo "cant: ";  die();
 ///////////////////////////////////////////////////////////////////////////////////////////////////////                
             }
         }

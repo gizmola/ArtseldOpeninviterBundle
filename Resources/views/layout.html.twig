@@ -2,25 +2,30 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <link rel="stylesheet" href="{{ asset('bundles/artseldopeninviter/css/common.css') }}" type="text/css" media="all" />
-        <title>{% block title %}Artseld Openinviter Bundle{% endblock %}</title>
+        <title>{% block title %}Qubeey Inviter Engine{% endblock %}</title>
 
         {% block stylesheets %}
-            <link rel="stylesheet" type="text/css" href="{{ asset('bundles/artseldopeninviter/css/common.css') }}" />
+            <link rel="stylesheet" type="text/css" href="{{ asset('bundles/artseldopeninviter/css/common.css') }}" media="all" />
+            <!-- Main Styles -->
+            <link rel="stylesheet" type="text/css" href="{{ asset('css/styles.css') }}"/>
+            <link rel="stylesheet" type="text/css" href="{{ asset('css/grid.css') }}"/>
+            
         {% endblock %}
 
         {% block javascripts %}
             <script type="text/javascript" src="/js/jquery-1.10.1.min.js"></script>
+            <script  src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
             <script type="text/javascript" src="{{ asset('bundles/artseldopeninviter/js/common.js') }}"></script>
+           
         {% endblock %}
-
-        <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
+        
     </head>
-    <body style="background:url({{ asset('images/inviter/QUB_Invite_BackgroundGRAD.jpg') }}) no-repeat;background-size:cover;">
+    
+    <body style="background:url({{ asset('images/inviter/QUB_Invite_BackgroundGRAD.jpg') }}) no-repeat; background-size:cover;">
     
     <!--Logo-->
-    <div class="grid_9 alignleft alpha" style="position:relative; top:15px; left:20px; padding-bottom:15px;">  
-       <a href="{{path('page_homepage')}}"><img src="{{ asset('images/inviter/QUB_InviteEngineLogo.png') }}" width="300" height="90" alt="temp logo"/></a>
+    <div style="position:relative; top:15px; left:20px; padding-bottom:35px;">  
+       <a href="{{path('page_homepage')}}"><img src="{{ asset('images/inviter/QUB_InviteEngineLogo.png') }}" width="307" height="113" alt="Inviter logo"/></a>
     </div>
     <!--End Logo-->
     
@@ -34,11 +39,146 @@
             {{ app.session.flash('artseld_openinviter.notification.error')|trans }}
         </div>
         {% endif %}
-        {% block content '' %}
-      {#  <div id="artseld_openinviter_copyright"><a href='http://openinviter.com/'>
-            <img src='http://openinviter.com/images/banners/banner_blue_1.gif?nr=69900' border='0' alt='Powered by OpenInviter.com' title='Powered by OpenInviter.com'>
-        </a></div> #}
         
+        {% block content %}
         
+        <script type="text/javascript">		  
+		 function showHideDivMail() {
+			 //window.history.back() 
+		     var divstyle = new String(); 
+		     divstyle = document.getElementById("div1").style.visibility; 
+		     if (divstyle.toLowerCase() == "hidden" || divstyle == "") { 
+		         document.getElementById("div1").style.visibility = "visible"; 
+		         document.getElementById("div2").style.visibility = "hidden"; 
+		         document.getElementById("div3").style.visibility = "hidden"; 
+		     } 
+		 } 
+		
+		 function showHideDivGeneral() { 
+		     var divstyle = new String(); 
+		     divstyle = document.getElementById("div3").style.visibility; 
+		     if (divstyle.toLowerCase() == "hidden" || divstyle == "") { 
+		         document.getElementById("div3").style.visibility = "visible"; 
+		         document.getElementById("div1").style.visibility = "hidden";
+		         document.getElementById("div2").style.visibility = "hidden";  
+		     } 
+		 } 
+		 // go back one page
+		 // $(function() { history.go(-1); });
+
+		 
+		 $(function() {
+
+		 var addY = 'yahoo';
+		 var addG = 'gmail';
+		 var addL = 'live';
+		 var addDiv = $('#addinput');
+
+		 $('#addGmail').live('click', function() {
+		 $('<input type="hidden" id="provider"  name="provider" value="'+addG+'"  />').appendTo(addDiv);
+		 return false;
+		 });
+
+		 $('#addYahoo').live('click', function() {
+		 $('<input type="hidden" id="provider"  name="provider" value="'+addY+'"  />').appendTo(addDiv);
+		 return false;
+		 });
+
+		 $('#addLive').live('click', function() {
+		 $('<input type="hidden" id="provider"  name="provider" value="'+addL+'"  />').appendTo(addDiv);
+		 return false;
+		 });		 
+
+		 });		 
+		</script>        
+        <!-- -------------------------------------------------------------------------------- -->
+        
+         
+         <div id="buttons" style="position:relative; top:10px; left:20px; padding-bottom:25px;">
+                   <table cellspacing="0" cellpadding="0" style="border:0px solid blue;">
+                   <tr> 
+						<td align='center'>
+						    <a href="{{ path('artseld_openinviter_gmail') }}"  onclick="showHideDivMail()">						
+								<div id="addGmail" style='background:url({{ asset('images/inviter/GMail.png') }}) no-repeat; width:163px; height:89px;'></div>							
+							</a>
+						</td>
+						<td align='center'>
+							{# <form id="form6" name="form6" method="post" action="{{ path('artseld_openinviter_login') }}" onclick="showHideDivMail()"> #}
+							<a href="{{ path('artseld_openinviter_yahoo') }}" onclick="showHideDivMail()">
+								<div id="addYahoo" style='background:url({{ asset('images/inviter/Yahoo.png') }}) no-repeat; width:163px; height:89px;'></div>							
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<td align='center'>
+						    <a href="{{ path('artseld_openinviter_fb') }}">
+								<div style='background:url({{ asset('images/inviter/FB.png') }}) no-repeat; width:163px; height:89px;'></div>
+							</a>
+						</td>						
+						<td align='center'>
+							<a href="{{ path('artseld_openinviter_twt') }}">
+								<div style='background:url({{ asset('images/inviter/Twitter.png') }}) no-repeat; width:163px; height:89px;'></div>
+							</a>
+						</td>	
+					</tr>
+					<tr>					
+						<td align='center'>
+							<a href="{{ path('artseld_openinviter_linkedin') }}">
+								<div style='background:url({{ asset('images/inviter/LinkedIN.png') }}) no-repeat; width:163px; height:89px;'></div>
+							</a>
+						</td>	
+						<td align='center'>
+							<a href="{{ path('artseld_openinviter_login') }}" onclick="showHideDivMail()">
+								<div id="addLive" style='background:url({{ asset('images/inviter/Outlook.png') }}) no-repeat; width:163px; height:89px;'></div>
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<td align='center'>
+							<form id="form7" name="form7" method="post" action="{{ path('artseld_openinviter_login') }}" onclick="showHideDivMail()">
+								<div style='background:url({{ asset('images/inviter/YouTube.png') }}) no-repeat; width:163px; height:89px;'></div>
+								<input type="hidden" name="provider" value="YouTube"/>
+							</form>
+						</td>
+						<td align='center'>
+							<a href="{{ path('artseld_openinviter_login') }}" onclick="showHideDivMail()">
+								<div id="addLive" style='background:url({{ asset('images/inviter/WindowsLive.png') }}) no-repeat; width:163px; height:89px;'></div>
+							</a>
+						</td>
+					</tr>
+					<tr>	
+						<td align='center'>
+                            <a href="{{ path('artseld_openinviter_login') }}" onclick="showHideDivMail()">
+								<div style='background:url({{ asset('images/inviter/MSN.png') }}) no-repeat; width:163px; height:89px;'></div>
+							</a>
+						</td>
+					    {# 
+					    <td align='center'>
+							<form id="form10" name="form10" method="post" action="{{ path('artseld_openinviter_login') }}" onclick="showHideDivGeneral()">
+								<div style='background:url({{ asset('images/inviter/Flickr.png') }}) no-repeat; width:163px; height:89px;'></div>
+								<input type="hidden" name="provider" value="Flickr"/>
+							</form>
+						</td>
+						#}
+						<td align='center' colspan="3">
+                            <a href="{{ path('artseld_openinviter_login') }}" onclick="showHideDivMail()">
+								<div id="addLive" style='background:url({{ asset('images/inviter/Hotmail.png') }}) no-repeat; width:163px; height:89px;'></div>
+							</a>
+						</td>
+						{#
+						<td align='center'>
+							 <form id="form12" name="form12" method="post" action="{{ path('artseld_openinviter_login') }}" onclick="showHideDivMail()"> 
+								<div style='background:url({{ asset('images/inviter/Vimeo.png') }}) no-repeat; width:163px; height:89px;'></div>
+							 </form>
+						</td> 
+						#}     
+                    </tr>
+                </table>
+       </div>         
+       <div class="clearsmall"></div>     
+       
+      <!-- -------------------------------------------------------------------------------- -->
+
+        {% endblock %}
     </body>
 </html>

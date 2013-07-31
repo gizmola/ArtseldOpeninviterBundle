@@ -2,22 +2,50 @@
 {% form_theme invite_form 'ArtseldOpeninviterBundle::form.html.twig' %}
 
 {% block content %}
+
     <form class="artseld_openinviter_form" id="artseld_openinviter_invite_form" action="{{ path('artseld_openinviter_invite') }}" method="post" {{ form_enctype(invite_form) }}>
     {{ form_errors(invite_form) }}
-  {#  {{ form_row(invite_form.message) }} #}
+    {#  {{ form_row(invite_form.message) }} #}
     {# <div><input type="submit" value="{{ 'artseld_openinviter.action.send'|trans }}" /></div> #}
-    <div><input type="submit" value="{{ 'Send'|trans }}" /></div>
-    <div>
-        {# <label for="toggle_all_checkbox">{{ 'artseld_openinviter.action.toggle_select'|trans }} #}
-        <label for="toggle_all_checkbox">{{ 'Toggle Select All'|trans }}
-        <input type="checkbox" onchange='toggleAll(this)' id="toggle_all_checkbox" name='toggle_all' title='{{ 'artseld_openinviter.action.toggle_select'|trans }}' />
-        </label>
-    </div>
-    {{ form_row(invite_form.email) }}
-    {{ form_rest(invite_form) }}
-   {#  <div><input type="submit" value="{{ 'artseld_openinviter.action.send'|trans }}" /></div> #}
-    <div><input type="submit" value="{{ 'Send'|trans }}" /></div>
+    <table cellspacing="10" cellpadding="10" style="border:0px solid blue; width:600px;">
+    <tr> 
+         <td>&nbsp;</td> 
+    	 <td>
+	        {# <label for="toggle_all_checkbox">{{ 'artseld_openinviter.action.toggle_select'|trans }} #}
+	        <label for="toggle_all_checkbox">{{ 'Toggle Select All'|trans }}
+	        <input type="checkbox" onchange='toggleAll(this)' id="toggle_all_checkbox" name='toggle_all' title='{{ 'artseld_openinviter.action.toggle_select'|trans }}' />
+	        </label>
+	    </td> 
+	    <td><input type="submit" name="submit" value="{{ 'Send'|trans }}" class="button highlight small" style="width:100px;" /></td>
+	</tr>
+	<tr>
+	    <td colspan="3">              
+     	     <div class="divider" style="border-top: 0px; margin:10px;"></div>  
+     	</td>
+    </tr>
+	<tr> 
+	   <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td> 
+	   <td colspan="2">
+       {{ form_row(invite_form.email) }}
+       <br />
+       {{ form_rest(invite_form) }}
+       </td>
+    </tr>
+	<tr>
+	    <td colspan="3">              
+     	     <div class="divider" style="border-top: 0px; margin:10px;"></div>  
+     	</td>
+    </tr>    
+    <tr>
+       <td colspan="2">&nbsp;</td>
+       <td>   
+       {#  <div><input type="submit" value="{{ 'artseld_openinviter.action.send'|trans }}" /></div> #}
+         <input type="submit" name="submit" value="{{ 'Send'|trans }}" class="button highlight small" style="width:100px;" />
+       </td>
+    </tr>
+    </table>   
     </form>
+    
     <script>
        $(window).load(function () {
              $('input[type=checkbox]').attr('checked',true);
