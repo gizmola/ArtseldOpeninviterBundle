@@ -2,10 +2,23 @@
 {% form_theme login_form 'ArtseldOpeninviterBundle::form.html.twig' %}
 
 {% block content %}
-    <form class="artseld_openinviter_form" id="artseld_openinviter_login_form" action="{{ path('artseld_openinviter_login') }}" method="post" {{ form_enctype(login_form) }}>
-    {{ form_widget(login_form) }}
-   {#  <div><input type="submit" value="{{ 'artseld_openinviter.action.import'|trans }}" /></div> #}
+   {{ parent() }}
+     <!-- -------------------------------------------------------------------------------- -->
+    {% set seswithtoken = app.session.get('seswithtoken') %}
+    <table cellspacing="0" cellpadding="0" style="border:0px solid blue; width:339px;">
+    <tr>   
+        <td>
+        <div id="div1" style="visibility:hidden; position:relative; top:-20px; left:20px; padding-bottom:25px;">  
+            <form class="artseld_openinviter_form" id="artseld_openinviter_login_form" action="{{ path('artseld_openinviter_login', {withtoken: seswithtoken} ) }}" method="post" {{ form_enctype(login_form) }}>             
+              {{ form_widget(login_form) }}  
+              <div id="addinput"></div>
+              <div style="text-align:center; position:relative; left:50px;">
+              <input type="submit" name="submit" value="Import Contacts" class="button highlight small"  style="width:200px;" /></div>
+            </form>
+        </div>
+        </td>
+    </tr>
+    </table>
    
-   <div><input type="submit" value="{{ 'Import contacts'|trans }}" /></div>
-    </form>
+    <!-- ------------------------------------------------------------------------------------ -->
 {% endblock %}

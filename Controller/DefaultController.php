@@ -32,7 +32,6 @@ use Qubeey\ApiBundle\Document\MemberInviter;
 use Qubeey\ApiBundle\Utility\Facebook;
 use TwitterOAuth\Api;
 use Qubeey\ApiBundle\Utility\LinkedIn;
-//use Artseld\OpeninviterBundle\Utility\YahooOAuth\OAuth\Globals;
 use Qubeey\ApiBundle\Utility\YahooOAuth\OAuth\Globals;
 use Qubeey\ApiBundle\Utility\Linkedinapi;
 use Qubeey\ApiBundle\Utility\Liveapi;
@@ -61,7 +60,6 @@ class DefaultController extends Controller
 
     protected $errorcontent;
 
-    
     //****************************************************************************************//
     
     /**
@@ -71,6 +69,31 @@ class DefaultController extends Controller
      */
     public function gmailAction(Request $request)
     {
+    	$this->_init();
+    	$response = new Response();
+    	$request = $this->getRequest();
+    	$session = $request->getSession();
+    	$em = $this->getDoctrine()->getEntityManager();
+    	
+    	$seswithtoken = $session->get('seswithtoken');
+    	$sessource = $session->get('sessource');
+    	
+    	if($seswithtoken != '' && $sessource != ''){
+    		$clientSession = $em->getRepository('QubeeyApiBundle:Clientsession')->findOneByToken($seswithtoken);
+    		$user = $clientSession->getMember();  //die();
+    	}else {
+    		$user = "anon.";
+    	}
+    	
+    	$id = $user->getMemberQid();  //var_dump($id); die;
+    	//print_r($user);
+    	//////////////////////////////////////////////////////////////////////////////////////
+    	
+    	
+    	
+    	
+    	
+    	
     	return $this->get('templating')->renderResponse('ArtseldOpeninviterBundle:Default:gmail.html.twig');
     } 
     
@@ -84,15 +107,23 @@ class DefaultController extends Controller
     public function yahooAction(Request $request, $ycb=false)
     {
     	$this->_init();
-    
-    	$user = $this->get('security.context')->getToken()->getUser();
-    	$id = $user->getMemberQid();  //var_dump($id); die;
-    	//print_r($user);
     	
     	$response = new Response();
-    	$session = $request->getSession();    	
-    	//$session = $this->get('session'); 
-    	   
+    	$session = $request->getSession();
+    	$em = $this->getDoctrine()->getEntityManager();
+    	
+    	$seswithtoken = $session->get('seswithtoken');
+    	$sessource = $session->get('sessource');
+    	
+    	if($seswithtoken != '' && $sessource != ''){
+    		$clientSession = $em->getRepository('QubeeyApiBundle:Clientsession')->findOneByToken($seswithtoken);
+    		$user = $clientSession->getMember();  //die();
+    	}else {
+    			$user = "anon.";
+    	}
+    	
+    	$id = $user->getMemberQid();  //var_dump($id); die;
+    	//print_r($user);
     	//////////////////////////////////////////////////////////////////////////////////////
     	$mt = microtime();
     	$rand = mt_rand();
@@ -105,8 +136,8 @@ class DefaultController extends Controller
     	$yahooapi = new Globals();
     	//print_r($yahooapi);    	
     	//die();
-
     	//////////////////////////////////////////////////////////////////////////////
+    	
     	if(isset($ycb) && $ycb == 'LST'){
     		
     		$getaccesstoken = $yahooapi->get_access_token($oauth_consumer_key, $oauth_secret_key, $_SESSION['oauth_requesttoken'], $_SESSION['oauth_requesttoken_secret'], $_GET['oauth_verifier'], false, true, true);
@@ -121,10 +152,7 @@ class DefaultController extends Controller
 	    			$session->set('oauth_session_handle', $body_parsed2['oauth_session_handle']);
 	    			$session->set('xoauth_yahoo_guid', $body_parsed2['xoauth_yahoo_guid']);
 	    			
-	    			
-	    			//print_r($session);
-	    			//echo $session->get('oauth_accesstoken');
-	    			    
+	    			//print_r($session);	    			    
 	    			//die();
 	    			
 	    			/*
@@ -211,7 +239,7 @@ class DefaultController extends Controller
     	list($info, $headers, $body, $body_parsed) = $getrequesttoken;
     	
 	    if ($info['http_code'] == 200 && !empty($body)) {
-	    $_SESSION['oauth_requesttoken'] = $body_parsed['oauth_token'];
+	    			$_SESSION['oauth_requesttoken'] = $body_parsed['oauth_token'];
 	    			$_SESSION['oauth_requesttoken_secret'] = $body_parsed['oauth_token_secret'];
 	    
 	    			//echo $body_parsed['oauth_token']; //die();
@@ -258,12 +286,23 @@ class DefaultController extends Controller
     {
     	$this->_init();
     
-    	$user = $this->get('security.context')->getToken()->getUser();
-    	$id = $user->getMemberQid();  //var_dump($id); die;
-    	//print_r($user);
-    	
     	$response = new Response();
     	$session = $request->getSession();
+    	$em = $this->getDoctrine()->getEntityManager();
+    	
+    	$seswithtoken = $session->get('seswithtoken');
+    	$sessource = $session->get('sessource');
+    	
+    	if($seswithtoken != '' && $sessource != ''){
+    		$clientSession = $em->getRepository('QubeeyApiBundle:Clientsession')->findOneByToken($seswithtoken);
+    		$user = $clientSession->getMember();  //die();
+    	}else {
+    		$user = "anon.";
+    	}
+    	
+    	$id = $user->getMemberQid();  //var_dump($id); die;
+    	//print_r($user);
+
     	$liveapi = new Liveapi();
     	//////////////////////////////////////////////////////////////////////////////////////
 
@@ -371,12 +410,24 @@ class DefaultController extends Controller
     public function linkedinAction(Request $request, $lcb=false)
     {
     	$this->_init();
-    
-    	$user = $this->get('security.context')->getToken()->getUser();
+    	
+    	$response = new Response();
+    	$session = $request->getSession();
+    	$em = $this->getDoctrine()->getEntityManager();
+    	
+    	$seswithtoken = $session->get('seswithtoken');
+    	$sessource = $session->get('sessource');
+    	
+    	if($seswithtoken != '' && $sessource != ''){
+    		$clientSession = $em->getRepository('QubeeyApiBundle:Clientsession')->findOneByToken($seswithtoken);
+    		$user = $clientSession->getMember();  //die();
+    	}else {
+    		$user = "anon.";
+    	}    	
+
     	$id = $user->getMemberQid();  //var_dump($id); die;
     	//print_r($user);
-    	$response = new Response();
-    	//$session = $request->getSession();
+
     	$linkedinapi = new Linkedinapi();
     	
     	//////////////////////////////////////////////////////////////////////////////////////
@@ -406,7 +457,7 @@ class DefaultController extends Controller
     		exit;
     	} elseif (isset($_GET['code'])) {
     		// User authorized your application
-    		if ($_SESSION['state'] == $_GET['state']) {
+    		if ($_SESSION['link_state'] == $_GET['state']) {
     			// Get token so you can make API calls
     			//echo "access token"; die();
     			$linkedinapi->getAccessToken($API_KEY, $API_SECRET, $url);
@@ -415,11 +466,11 @@ class DefaultController extends Controller
     			exit;
     		}
     	} else {
-    		if ((empty($_SESSION['expires_at'])) || (time() > $_SESSION['expires_at'])) {
+    		if ((empty($_SESSION['link_expires_at'])) || (time() > $_SESSION['link_expires_at'])) {
     			// Token has expired, clear the state
     			//$_SESSION = array();
     		}
-    		if (empty($_SESSION['access_token'])) {
+    		if (empty($_SESSION['link_access_token'])) {
     			// Start authorization process
     			// echo "Auth"; die();
     			$linkedinapi->getAuthorizationCode($API_KEY, $SCOPE, $url);
@@ -430,11 +481,11 @@ class DefaultController extends Controller
     	//http://api.linkedin.com/v1/people/~/connections
     	// $user = $this->fetch('GET', '/v1/people/~:(firstName,lastName)');
     	$user2 = $linkedinapi->fetch('GET', '/v1/people/~:(id,firstName,lastName)');
-
-    
+		$session->set('link_name', $user2->{'firstName'}. " ". $user2->{'lastName'});  //echo $session->get('link_name'); die();
+    	
     	// $user = $this->fetch('GET', '/v1/people/~/connections:(first-name,last-name,main-address)');
     	$user = $linkedinapi->fetch('GET', '/v1/people/~/connections');
-
+		//print_r($user); die();
     	if($user->{'_total'} > 0){    
     		$contacts=array();
     		foreach($user->{'values'} as $key=>$val){
@@ -471,12 +522,23 @@ class DefaultController extends Controller
     public function twitterAction(Request $request, $twt=false)
     {
     	$this->_init();
-    
-    	$user = $this->get('security.context')->getToken()->getUser();
-    	$id = $user->getMemberQid();  //var_dump($id); die;
-    	//print_r($user);
+
     	$response = new Response();
     	$session = $request->getSession();
+    	$em = $this->getDoctrine()->getEntityManager();
+    	
+    	$seswithtoken = $session->get('seswithtoken');
+    	$sessource = $session->get('sessource');
+    	
+    	if($seswithtoken != '' && $sessource != ''){
+    		$clientSession = $em->getRepository('QubeeyApiBundle:Clientsession')->findOneByToken($seswithtoken);
+    		$user = $clientSession->getMember();  //die();
+    	}else {
+    		$user = "anon.";
+    	}    
+
+    	$id = $user->getMemberQid();  //var_dump($id); die;
+    	//print_r($user);    	
     	//////////////////////////////////////////////////////////////////////////////////////
     
     	if(isset($twt) && $twt == 'LST')
@@ -486,8 +548,7 @@ class DefaultController extends Controller
     		$access_token = $connection->getAccessToken($_REQUEST['oauth_verifier']);
     		
     		/* Save the access tokens. Normally these would be saved in a database for future use.  DO IT IN SYMFONY */
-    		//$_SESSION['access_token'] = $access_token;
-    		$session->set('access_token', $access_token);
+    		$_SESSION['access_token'] = $access_token;
     		
     		/* Remove no longer needed request tokens */
     		//unset($_SESSION['oauth_token']);
@@ -504,13 +565,14 @@ class DefaultController extends Controller
     
     			/* If method is set change API call made. Test is called by default. */
     			$content = $connection->get('account/verify_credentials');
+    			$_SESSION['twt_screenname'] = $content->{'screen_name'};
+    			$_SESSION['twt_name'] = $content->{'name'};
 
-    
     			$connection->host = 'https://api.twitter.com/1.1/'; // By default library uses API version 1.
     			
     			//GET Followers
     			$friendsJson = $connection->get('/followers/list.json?cursor=-1&screen_name='.$content->{'screen_name'}.'&skip_status=true&include_user_entities=false');
-    			
+    			//print_r($friendsJson); die();
     			//GET Friends
     			//$friendsJson = $connection->get('/friends/list.json?cursor=-1&screen_name='.$content->{'screen_name'}.'&skip_status=true&include_user_entities=false');
     			    
@@ -578,17 +640,27 @@ class DefaultController extends Controller
     {
     	$this->_init();
     
-    	$user = $this->get('security.context')->getToken()->getUser();
+        $response = new Response();
+        $request = $this->getRequest();
+    	$session = $request->getSession();
+    	$em = $this->getDoctrine()->getEntityManager();
+    	
+    	$seswithtoken = $session->get('seswithtoken');
+    	$sessource = $session->get('sessource');
+    	
+    	if($seswithtoken != '' && $sessource != ''){
+    		$clientSession = $em->getRepository('QubeeyApiBundle:Clientsession')->findOneByToken($seswithtoken);
+    		$user = $clientSession->getMember();  //die();
+    	}else {
+    		$user = "anon.";
+    	}
+    	
     	$id = $user->getMemberQid();  //var_dump($id); die;
     	//print_r($user);
     
     	//////////////////////////////////////////////////////////////////////////////////////
-    
-    	$response = new Response();
-    	//echo "response: ";
-    	//print_r($response);
-    	//echo "<br/><br/>";    
-    	$request = $this->getRequest();
+     
+    	
     
     	$facebook = new Facebook(array(
     			'appId'  => $this->container->getParameter('FACEBOOK_APP_ID'),
@@ -620,7 +692,7 @@ class DefaultController extends Controller
 	    		// echo count($emailscont['friends']['data']);
 	    
 	    		//if (in_array("friends", $emailscont['friends']['data'])) {
-	    			//print_r($emailscont); //die();
+	    			print_r($emailscont); die();
 	    		//}
 	    		//print_r($emailscont);
 	    		$contacts=array();
@@ -697,244 +769,228 @@ class DefaultController extends Controller
     
     }
     
-    //====================================================  Vimeo Action ==================================================//
+//====================================================  Vimeo Action ==================================================//
     /**
      * Vimeo action
      * @param \Symfony\Component\HttpFoundation\Request $request
      * @return \Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function vimeoAction(Request $request, $user)
+    public function vimeoAction(Request $request, $vmo=false)
     {
-    	$this->_init();
-    
-    	$member = $this->get('security.context')->getToken()->getUser();
-    	$id = $member->getMemberQid();  //var_dump($id); die;
-    
-    	//////////////////////////////////////////////////////////////////////////////////////
-    
-    	$response = new Response();
-    
-    	$request = $this->getRequest();
-    	$redirect_url =  $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath();
-    	//$url = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath() . $this->generateUrl('artseld_openinviter_login');
-    	$url = $request->getScheme().'://'.$request->getHttpHost().$request->getBasePath().$this->generateUrl('artseld_openinviter_vimeo', array('user'=>'olechka'));
-    
-    	//$_consumer_key    = '70418d113d90a73b7fe63fbd18f46985c2c4f6e7';  // Client ID (Also known as Consumer Key or API Key)
-    	//$_consumer_secret = '5a7aff371bed7ca71b3a30a9ea4a1da0d1a9f38f';  // Client Secret (Also known as Consumer Secret or API Secret)
-    	//$_token           = '318d1b37e3fbb2e2abce499876054d01';          // Access token
-    	//$_token_secret    = 'f835c4de75ad41d8e85e9bec54673fd3d8c8cbc7';  // Access token secret     // guard this!
-    	$_consumer_key    = $this->container->getParameter('VIMEO_CONSUMER_KEY');
-    	$_consumer_secret = $this->container->getParameter('VIMEO_CONSUMER_SECRET');
-    	$_token           = $this->container->getParameter('VIMEO_ACCESS_TOKEN');    //echo "<br />AccessToken: " . $_token;
-    	$_token_secret    = $this->container->getParameter('VIMEO_TOKEN_SECRET');
-    
-    	//echo "<br />TOKEN: " . $this->container->getParameter('VIMEO_ACCESS_TOKEN');
-    
-    	$API_REST_URL          = 'http://vimeo.com/api/rest/v2';
-    	$API_AUTH_URL          = 'http://vimeo.com/oauth/authorize';      // Authorize URL
-    	$API_ACCESS_TOKEN_URL  = 'http://vimeo.com/oauth/access_token';   // Access Token URL
-    	$API_REQUEST_TOKEN_URL = 'http://vimeo.com/oauth/request_token';  // Request Token URL
-    
-    	// echo  $this->get('kernel')->getRootDir(); echo "<br/>";
-    	// echo  $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $request->getBasePath();  //home2/olga/serverWeb/app/../web/dev
-    	// die();
-    	$path= $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $this->getRequest()->getBasePath();
-    
-    	$this->_cache_dir = $path;     //echo "<br /><br />Path from class: " . getcwd();
-    	//$files = scandir($this->_cache_dir);
-    
-    	$filename = $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $this->getRequest()->getBasePath(); // . $this->getRequest()->getBasePath();
-    
-    	if (file_exists($filename)) {
-    		echo "<br /><br />The file $filename exists";
-    } else {
-    	echo "<br /><br />The file $filename does not exist";
-    }
-    //die();
-    		//====================================================== simple api interface ====================================================================//
-    
-    		$vim = new \Qubeey\ApiBundle\Utility\Vimeo($_consumer_key, $_consumer_secret, $_token, $_token_secret);   print_r($vim);
-    
-    		$params = array(1);//vimeo.contacts.getAll
-    		//
-    		$vim->setToken($_token, $_token_secret);
-    		$token = $vim->getRequestToken();  echo "<br /><br />I am here: <br />" . print_r($token);
-    //$vim->getAccessToken('olechka');
-    $vim->getAuthorizeUrl($_consumer_key);
-    $vim->auth('read', 'http://nginx1.qubedev.com:7031/app_dev.php/oi/invite');
-    echo $vim->call('vimeo.contacts.getAll', $params);
-    //echo md5(uniqid(microtime()));
-    
-    //================================================================================================================================================//
-    
-    
-    // Create the object and enable caching
-    //$vimeo = new \Qubeey\ApiBundle\Utility\Vimeo($_consumer_key, $_consumer_secret, $_token, $_token_secret);
-    ///$vimeo = new \Qubeey\ApiBundle\Utility\Vimeo($this->container->getParameter('VIMEO_CONSUMER_KEY'), $this->container->getParameter('VIMEO_CONSUMER_SECRET'),$_token, $_token_secret);
-    //$vimeo->enableCache(\Qubeey\ApiBundle\Utility\Vimeo::CACHE_FILE, $path, 300);
-    //$vimeo->enableCache(phpVimeo::CACHE_FILE, './cache', 300);
-    //echo "<br /><br />Vimeo: ";
-    //print_r($vimeo); die();
-    
-    	/* Save the access tokens. Normally these would be saved in a database for future use.  DO IT IN SYMFONY */
-    // Set up variables
-    //$state = 'start';
-    
-    //$state = $_SESSION['vimeo_state'];                   //echo "<br />Vimeo State: " . $_SESSION['vimeo_state'];
-    $request_token = $_SESSION['oauth_request_token'];   //echo "<br />Vimeo oauth_request_token: " . $_SESSION['oauth_request_token'];
-    $access_token = $_SESSION['oauth_access_token'];     //echo "<br />Vimeo oauth_access_token: " . $_SESSION['oauth_access_token'];
-    
-    echo "<br /><br />Vimeo: ";
-    print_r($vimeo); //die();
-    echo "<br /><br />Oauth Token: " . $_REQUEST['oauth_token'];
+        $this->_init();
+   
+        $response = new Response();
+    	$session = $request->getSession();
+    	$em = $this->getDoctrine()->getEntityManager();
+    	
+    	$seswithtoken = $session->get('seswithtoken');
+    	$sessource = $session->get('sessource');
+    	
+    	if($seswithtoken != '' && $sessource != ''){
+    		$clientSession = $em->getRepository('QubeeyApiBundle:Clientsession')->findOneByToken($seswithtoken);
+    		$user = $clientSession->getMember();  //die();
+    	}else {
+    		$user = "anon.";
+    	}    	
+
+    	$id = $user->getMemberQid();  //var_dump($id); die;
+    	//print_r($user);
+             
+        //////////////////////////////////////////////////////////////////////////////////////
+       
+        if(isset($vmo) && $vmo == 'VMO'){
+        		echo "START 0</br/>";  die();
+        }
+        
+        $request = $this->getRequest();
+        $redirect_url =  $request->getScheme().'://'.$request->getHttpHost().$request->getBasePath().$this->generateUrl('artseld_openinviter_login').'invite';             ///echo "RedirectURL: " .$redirect_url ."<br />";
+        $url = $request->getScheme().'://'.$request->getHttpHost().$request->getBasePath().$this->generateUrl('artseld_openinviter_vimeovm', array('vmo'=>'VMO'));         ///echo "URL: " . $url ."<br />";
+ 
+	    $_consumer_key    = $this->container->getParameter('VIMEO_CONSUMER_KEY');     // Client ID (Also known as Consumer Key or API Key)
+    	$_consumer_secret = $this->container->getParameter('VIMEO_CONSUMER_SECRET');  // Client Secret (Also known as Consumer Secret or API Secret)
+    	$_token           = $this->container->getParameter('VIMEO_ACCESS_TOKEN');     // Access token
+    	$_token_secret    = $this->container->getParameter('VIMEO_TOKEN_SECRET');     // Access token secret     // guard this!
+                 
+        $API_REST_URL          = 'http://vimeo.com/api/rest/v2';
+        $API_AUTH_URL          = 'http://vimeo.com/oauth/authorize';      // Authorize URL
+        $API_ACCESS_TOKEN_URL  = 'http://vimeo.com/oauth/access_token';   // Access Token URL
+        $API_REQUEST_TOKEN_URL = 'http://vimeo.com/oauth/request_token';  // Request Token URL
+
+        $path = $this->get('kernel')->getRootDir(). '/cache/dev/inviter' . $this->getRequest()->getBasePath();       
+        $this->_cache_dir = $path;     
+
+        //====================================================== simple api interface ====================================================================//
+        $params = array(1); 
+       
+        // Create the object and enable caching
+        // 1. Get a request token
+        $vimeo = new \Qubeey\ApiBundle\Utility\Vimeo($_consumer_key, $_consumer_secret, $_token, $_token_secret);
+        $vimeo->enableCache(\Qubeey\ApiBundle\Utility\Vimeo::CACHE_FILE, $path, 300);
+        $token = $vimeo->getRequestToken();  echo "<br /><br />";    //print_r($token); 
+        //Store in session, or wherever you like-- these are temporary, so doesn't matter.
+        $_SESSION['oauth_request_token'] = $token['oauth_token'];               echo "<br />OAUTH TOKEN: " . $token['oauth_token'];
+        $_SESSION['oauth_request_token_secret'] = $token['oauth_token_secret']; echo "<br />OAUTH SECRET TOKEN: " . $token['oauth_token_secret'];
+        
+        // 2. Request authorization
+        $authorize_link = $vimeo->getAuthorizeUrl($_SESSION['oauth_request_token'], 'write');          echo "<br /><b>AutorizeURL:</b> " .$authorize_link;
+        $callback_url = $vimeo->auth('read', 'http://nginx1.qubedev.com:7031/app_dev.php/oi/invite');  echo "<br /><b>CallbackURL:</b> " .$callback_url;
+       
+        die(); 
+        //================================================================================================================================================//
+        /*
+        // Create the object and enable caching
+        $vimeo = new \Qubeey\ApiBundle\Utility\Vimeo($_consumer_key, $_consumer_secret, $_token, $_token_secret);
+        $vimeo->enableCache(\Qubeey\ApiBundle\Utility\Vimeo::CACHE_FILE, $path, 300);
+        $vimeo->setToken($_token, $_token_secret);
+        $token = $vimeo->getRequestToken();  echo "<br /><br />";  print_r($token);
+ 
+         
+        // Store it in the session
+        $_SESSION['oauth_request_token'] = $token['oauth_token'];
+        $_SESSION['oauth_request_token_secret'] = $token['oauth_token_secret'];
+        $_SESSION['vimeo_state'] = 'start';
+
+        switch ($_SESSION['vimeo_state']) {
+            default:
+       
+            // Get a new request token
+            // $token = $vimeo->getRequestToken();
+       
+            // Store it in the session
+            $_SESSION['oauth_request_token'] = $token['oauth_token'];
+            $_SESSION['oauth_request_token_secret'] = $token['oauth_token_secret'];
+            $_SESSION['vimeo_state'] = 'start';
+       
+            // Build authorize link
+            $authorize_link = $vimeo->getAuthorizeUrl($token['oauth_token'], 'read');  echo "<br />AutorizeURL: " .$authorize_link;
+       
+            break;
+       
+            case 'returned':
+                echo "<br />Vimeo State1: " . $_SESSION['vimeo_state'];
+                // Store it
+                if ($_SESSION['oauth_access_token'] === NULL && $_SESSION['oauth_access_token_secret'] === NULL) {
+                    // Exchange for an access token
+                    $vimeo->setToken($_SESSION['oauth_request_token'], $_SESSION['oauth_request_token_secret']);
+                    $token = $vimeo->getAccessToken($_REQUEST['oauth_verifier']);
+       
+                    // Store
+                    $_SESSION['oauth_access_token'] = $token['oauth_token'];   echo "SESSION access token: " . $_SESSION['oauth_access_token'];
+                    $_SESSION['oauth_access_token_secret'] = $token['oauth_token_secret'];
+                    $_SESSION['vimeo_state'] = 'done';
+       
+                    // Set the token
+                    $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']); 
+                    echo "Tokens: " . $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']);
+                }
+       
+                // Do an authenticated call
+                try {
+                    $videos = $vimeo->call('vimeo.videos.getUploaded');
+                }
+                catch (VimeoAPIException $e) {
+                    echo "Encountered an API error -- code {$e->getCode()} - {$e->getMessage()}";
+        }
+       
+        break;
+        }       
+       */
+       
+        // Coming back
+        //if ($token['oauth_token'] != NULL && $_SESSION['vimeo_state'] === 'start') {
+        //    $_SESSION['vimeo_state'] = $state = 'returned';
+        //}
+        //echo "<br />Vimeo State: " . $_SESSION['vimeo_state'];
+               
+        // If we have an access token, set it
+        /*if (isset($_SESSION['oauth_access_token']) && ($_SESSION['oauth_access_token'] != null)) {
+            $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']);  echo "IF access token: " . $_SESSION['oauth_access_token'];
+        }       
+        else{
+            echo "ELSE access token: " . $_SESSION['oauth_access_token'];
+        }
+        die();
+        /* Save the access tokens. Normally these would be saved in a database for future use.  DO IT IN SYMFONY */
+        // Set up variables       
+        /*$token = $vimeo->getRequestToken();
+        $vimeo->getAuthorizeUrl($_consumer_key);
+        $vimeo->auth('read', 'http://nginx1.qubedev.com:7031/app_dev.php/oi/invite');
+        //$state = $_SESSION['vimeo_state'];                   //echo "<br />Vimeo State: " . $_SESSION['vimeo_state'];
+        //$request_token = $_SESSION['oauth_request_token'];     //echo "<br />Vimeo oauth_request_token: " . $_SESSION['oauth_request_token'];
+        //$access_token = $_SESSION['oauth_access_token'];       //echo "<br />Vimeo oauth_access_token: " . $_SESSION['oauth_access_token'];
+       
+        echo "<br /><br />Vimeo State: " .  $_SESSION['vimeo_state'];
+        print_r($vimeo); die(); */
+      
     /************************************************************************************************************************************************/
-    /*
-    // Coming back
-    if ($_REQUEST['oauth_token'] != NULL && $_SESSION['vimeo_state'] === 'start') {
-    $_SESSION['vimeo_state'] = $state = 'returned';
-    }
-    
-    // If we have an access token, set it
-    if (isset($_SESSION['oauth_access_token']) && ($_SESSION['oauth_access_token'] != null)) {
-    $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']);  echo "access token: " . $_SESSION['oauth_access_token'];
-    }
-    
-    switch ($_SESSION['vimeo_state']) {
-    default:
-    
-    // Get a new request token
-    $token = $vimeo->getRequestToken();  echo "<br /><br />I am here: " . print_r($token);
-    
-    // Store it in the session
-    $_SESSION['oauth_request_token'] = $token['oauth_token'];
-    $_SESSION['oauth_request_token_secret'] = $token['oauth_token_secret'];
-    $_SESSION['vimeo_state'] = 'start';
-    
-    // Build authorize link
-    $authorize_link = $vimeo->getAuthorizeUrl($token['oauth_token'], 'write');
-    
-    break;
-    
-    case 'returned':
-    
-    // Store it
-    if ($_SESSION['oauth_access_token'] === NULL && $_SESSION['oauth_access_token_secret'] === NULL) {
-    // Exchange for an access token
-    $vimeo->setToken($_SESSION['oauth_request_token'], $_SESSION['oauth_request_token_secret']);
-    $token = $vimeo->getAccessTokenVim($_REQUEST['oauth_verifier']);
-    
-    // Store
-    $_SESSION['oauth_access_token'] = $token['oauth_token'];
-    $_SESSION['oauth_access_token_secret'] = $token['oauth_token_secret'];
-    $_SESSION['vimeo_state'] = 'done';
-    
-    // Set the token
-    $vimeo->setToken($_SESSION['oauth_access_token'], $_SESSION['oauth_access_token_secret']);
-    }
-    
-    // Do an authenticated call
-    try {
-    $videos = $vimeo->call('vimeo.videos.getUploaded');
-    }
-    catch (VimeoAPIException $e) {
-    echo "Encountered an API error -- code {$e->getCode()} - {$e->getMessage()}";
-    }
-    
-    break;
-    
-    }
-    //*********************************************************************************************************************/
-    
-    // Change this to your username to load in your videos
-    // $vimeo_user_name = ($_GET['user']) ? $_GET['user'] : 'olechka';
-    $vimeo_user_name = $user ? $user : 'olechka';
-    
-    // API endpoint
-    $api_endpoint = 'http://vimeo.com/api/v2/' . $vimeo_user_name;
-    
-    // Curl helper function
-    function curl_get($url) {
-    $curl = curl_init($url);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($curl, CURLOPT_TIMEOUT, 30);
-    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
-    $return = curl_exec($curl);
-    curl_close($curl);
-    return $return;
-    }
-    
-    // Load the user info and clips
-    $user = simplexml_load_string(curl_get($api_endpoint . '/info.xml'));
-    $videos = simplexml_load_string(curl_get($api_endpoint . '/videos.xml'));
-    
-    $output = '';
-    $output .= '<h1>Vimeo API PHP Example</h1>';
-    $output .= '<div id="stats">';
-    $output .= '<img id="portrait" src="'. $user->user->portrait_small .'" />';
-    $output .= '<h2>'. $user->user->display_name.'\'s Videos</h2>';
-    $output .= '</div>';
-    $output .= '<p id="bio">'. $user->user->bio .'</p>';
-    $output .= '<div id="thumbs">';
-    $output .= '<ul>';
-    foreach ($videos->video as $video) {
-    $output .= '<li>';
-    $output .= '<a href="'. $video->url .'"><img src="'. $video->thumbnail_medium .'" /></a>';
-    $output .= '</li>';
-    }
-    $output .= '</ul>';
-    $output .= '</div>';
-    //========================================================================================
-    /*
-    $output .= '<h1>Vimeo Advanced API OAuth Example</h1>';
-    $output .= '<p>This is a basic example of Vimeo\'s new OAuth authentication method.
-    Everything is saved in session vars, so <a href="?clear=all">click here if you want to start over</a>.</p>';
-    
-    if ($_SESSION['vimeo_state'] == 'start') {
-    $output .= '<p>Click the link to go to Vimeo to authorize your account.</p>';
-    $output .= '<p><a href="'.$authorize_link.'">'.$authorize_link.'</a></p>';
-    }
-    
-    if ($ticket) {
-    $output .= '<pre>'. print_r($ticket) .'</pre>';
-    }
-    
-    if ($videos) {
-    $output .= '<pre>'. print_r($videos) .'</pre>';
-    }
-    */
-    //=======================================================================================
-    
-    
-    echo $output;
+
+    //echo $output;
     //die();
-    return $this->get('templating')->renderResponse(
-    'ArtseldOpeninviterBundle:Default:done.html.twig', array('output'=> $output
-    ));
-    
+    // return $this->get('templating')->renderResponse('ArtseldOpeninviterBundle:Default:done.html.twig', array('output'=> $output));
+     return new RedirectResponse($this->generateUrl('artseld_openinviter_invite'));
     }
+   
+   
+ 
+    //==================================================== End Vimeo Action =============================================//  
+
     
     
-    
-    //==================================================== End Vimeo Action =============================================//    
 //***************************************************************************************//
     /**
      * Login action
      * @param \Symfony\Component\HttpFoundation\Request $request
      * @return \Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function loginAction(Request $request)
+    public function loginAction(Request $request, $withtoken = null)
     {
         $this->_init();
         
-        $user = $this->get('security.context')->getToken()->getUser();
-        //$id = $user->getMemberQid();  //var_dump($id); die;
-        //print_r($user);
+        $request = $this->getRequest();
+        $session = $request->getSession();  
+        $source =  $request->query->get('source');
+        $em = $this->getDoctrine()->getEntityManager();
         
-       // if($user){
-	       // defined( $user->getMemberQid())? $id = $user->getMemberQid():'';
-        	$id = $user->getMemberQid();
-	        $username = $user->getUsername();
-	        
+        if(isset($withtoken) && $source != ''){       	
+       		//echo $withtoken."<br/> ".$request->query->get('source');
+        	$session->set('sessource', $source);
+        	$session->set('seswithtoken', $withtoken);
+       	 	$clientSession = $em->getRepository('QubeeyApiBundle:Clientsession')->findOneByToken($withtoken);
+       	 	
+       	 	/*
+       	 	echo "<br/><br/>";
+       	 	echo $clientSession->getClientsessionQguid();
+       		 echo "<br/><br/>";       	 
+       	 	//print_r($clientSession->getMember());
+       		 echo $clientSession->getMember()->getMemberQid();
+       	 	 echo "<br/><br/>";     	
+       		 echo $clientSession->getMember()->getEmail();
+       		 echo "<br/><br/>";
+       		// print_r($clientSession);
+       		 //$id = $clientSession->getMember()->getMemberQid();
+       		 */
+       	 	
+       		 $user = $clientSession->getMember();
+       	 //die();
+        }else{
+        	
+        	$seswithtoken = $session->get('seswithtoken');
+        	$sessource = $session->get('sessource');
+        	
+        	if(isset($seswithtoken) && isset($sessource)){
+        		
+        		$clientSession = $em->getRepository('QubeeyApiBundle:Clientsession')->findOneByToken($seswithtoken);
+        		$user = $clientSession->getMember();
+        	}else {
+        	$user = "anon.";
+        	}
+        }
+        
+        
+        if ($user != "anon.") {
+         
+         $id = $user->getMemberQid();  //var_dump($id); die();         
+         
 	        
 	        //$ts = new \DateTime("now"); $new_time = date("Y-m-d H:m:s", strtotime('+1 hours', NOW())); print_r($new_time); die();
 	        if ($this->_getSessionVar(self::SVAR_STEP) != self::STEP_LOGIN) {
@@ -955,11 +1011,11 @@ class DefaultController extends Controller
 	                    $internal = $this->openinviter->getInternalError();
 	                    $form->addError(new \Symfony\Component\Form\FormError( $this->_trans(
 	                       // $internal ? $internal : $values["email"]." ".$values["password"].' - artseld_openinviter.notification.error.incorrect_login'
-	                    $internal ? $internal : 'artseld_openinviter.notification.error.incorrect_login'
+	                    $internal ? $internal : 'Incorrect login. Please check E-mail and password and try again.'
 	                    )));
 	                } elseif (false === $contacts = $this->openinviter->getMyContacts()) {
 	                    $form->addError(new \Symfony\Component\Form\FormError(
-	                        $this->_trans('artseld_openinviter.notification.error.cannot_get_contacts')
+	                        $this->_trans('Cannot get contacts!')
 	                    ));
 	                } else {
 	                    $this->_setSessionVar(array(
@@ -977,11 +1033,13 @@ class DefaultController extends Controller
 	        return $this->get('templating')->renderResponse(
 	            'ArtseldOpeninviterBundle:Default:login.html.twig', array(
 	                'login_form' => $form->createView(),
+	            	'with_token' =>  $session->get('seswithtoken')
 	            ));
         
-    	//}else {
-    		//return $this->redirect($this->generateUrl('page_homepage'));
-    	//}
+    	}else {
+    		
+    		return $this->redirect($this->generateUrl('_login'));
+    	}
     }
 
     
@@ -998,8 +1056,16 @@ class DefaultController extends Controller
         $dm = $this->get('doctrine.odm.mongodb.document_manager');
         $em = $this->getDoctrine()->getEntityManager();
         $session = $request->getSession();
-        $user = $this->get('security.context')->getToken()->getUser();
+        //$user = $this->get('security.context')->getToken()->getUser();
+        $seswithtoken = $session->get('seswithtoken');
+        $sessource = $session->get('sessource');
         
+        if($seswithtoken != '' && $sessource != ''){
+        	$clientSession = $em->getRepository('QubeeyApiBundle:Clientsession')->findOneByToken($seswithtoken);
+        	$user = $clientSession->getMember();  //die();
+        }else {
+        	$user = "anon.";
+        }
         
         if ($this->_getSessionVar(self::SVAR_STEP) != self::STEP_INVITE) {
             return new RedirectResponse($this->generateUrl('artseld_openinviter_login'));
@@ -1020,7 +1086,7 @@ class DefaultController extends Controller
                 } else {
                     if (empty($values['email'])) {
                         $form->addError(new \Symfony\Component\Form\FormError(
-                            $this->_trans('artseld_openinviter.notification.error.email_not_set')
+                            $this->_trans('Sender E-mail is not set!')
                         ));
                     }
                     
@@ -1028,7 +1094,7 @@ class DefaultController extends Controller
                     //echo "session :". $sessid;
                     if (empty($sessid)) {
                         $form->addError(new \Symfony\Component\Form\FormError(
-                            $this->_trans('artseld_openinviter.notification.error.no_active_session')
+                            $this->_trans('Session is not active!')
                         ));
                     }
                     
@@ -1047,55 +1113,29 @@ class DefaultController extends Controller
                     // ********************************************** //
                     // print_r($values); die();
                    
-                    //$session = $request->getSession();
-                    //$user = $this->get('security.context')->getToken()->getUser();
                    // print_r($user);
                     $id = $user->getMemberQid();
                     $username = $user->getUsername();
-                    //$sess = $this->get('session')->get('email');
-                    //echo "User Id: ".$username." ".$id; //." ".$session->get(SecurityContext::LAST_USERNAME);
-                    //echo "<br/><br/>"; echo "sess ".$sess; echo "<br/><br/>"; 
-                    //print_r($session);
-                    $id=1457007;
-                    $categories = $this->getDoctrine()->getRepository('QubeeyApiBundle:Entitycategory')->findBy(array('entityQid' => $id));
-                    if(count($categories)>0) {
-                    	$x=0;
-                    	foreach ($categories AS $category) {
-                    		$arrCategories[$x]['id']=$category->getEntitycategoryQid();
-                    		$arrCategories[$x]['name']=$category->getCategory()->getName();
-                    		//$arrCategories[$x]['catid']=$category->getCategory()->getCategoryId()
-                    		//echo category ID:sourceid:Name 
-                    		
-                    		$source = $arrCategories[$x]['name'];
-                    		//echo($arrCategories[$x]['id']. " : ".$category->getCategory()->getCategoryId()." : ".$arrCategories[$x]['name']);
-                    		$x++;
-                    	}
-                    }
                     
+                    $categories = $em->getRepository('QubeeyApiBundle:Category')->findOneByCategoryId($sessource);
+                   // print_r( $source = $categories->getName()); die();
+                    $source = $categories->getName();
      
-                   // print_r($arrCategories); echo "<br/><br/>";
-                   // print_r($categories->entitycategoryQid);  echo "<br/><br/>";                  
-                    //print_r($categories->getEntitycategoryQid()); echo "<br/><br/>";
                     // ********************************************** //
                    
                     $message = array(
                         'subject'       => $this->_trans('artseld_openinviter.text.message_subject',
                            // array('%link%' => $this->generateUrl('_welcome', array(), true))),
-                           array('%link%' => $this->generateUrl('channels_lp', array('custlp'=>$arrCategories[0]['name']), true))),
+                           array('%link%' => $this->generateUrl('channels_lp', array('custlp'=> ''), true))),
                         'body'          => $this->_trans('artseld_openinviter.text.message_body',
                             array('%username%' => $this->_getSessionVar(self::SVAR_EMAIL),
                                 //'%link%' => $this->generateUrl('_welcome', array(), true))) . "\n\r" . $values['message'],
-                            	'%link%' => $this->generateUrl('channels_lp', array('custlp'=>$arrCategories[0]['name']), true))) . "\n\r",
+                            	'%link%' => $this->generateUrl('channels_lp', array('custlp'=> ''), true))) . "\n\r",
                         'attachment'    => '',
                     );
 
                     // ********************************************** //
-	                    //echo $this->generateUrl('channels_lp', array('custlp'=>$arrCategories[0]['name']), true);
-	                   	// echo "<br/><br/>";
-	                   	// echo "<br/>".$this->generateUrl('channels_lp', array('custlp'=>$arrCategories[0]['name']), true) . "\n\r" . $values['message']."<br/>";
-	                   	// print_r($values); //die(); 
-	                  	//echo "<br/><br/>";
-	                  	//echo "message: ";  print_r($message); //die();
+
                  	 // ********************************************** //
                     $selectedContacts = array();
                     if ($this->openinviter->showContacts())
@@ -1107,7 +1147,7 @@ class DefaultController extends Controller
                         }
                         if (count($selectedContacts) == 0) {
                             $form->addError(new \Symfony\Component\Form\FormError(
-                                $this->_trans('artseld_openinviter.notification.error.contacts_not_selected')
+                                $this->_trans('You did not choose any contacts for inviting!')
                             ));
                         }
                     }  
@@ -1119,57 +1159,65 @@ class DefaultController extends Controller
                         $this->_getSessionVar(self::SVAR_SESSID), $message, $selectedContacts);
                     $this->openinviter->logout(); 
                     
+                    
+                    
                     /////////////////// ******** PROVIDERS ********* ///////////////////
                    // echo $this->_getSessionVar(self::SVAR_PROVIDER); die();
                    
+                    switch ($this->_getSessionVar(self::SVAR_PROVIDER))
+                    {
+                    	case "yahoo":
+                    		$sendMessage = -1;
+                    		break;
+                    	case "hotmail":
+                    		$sendMessage = -1;
+                    		break;
+                    	case "facebook":
+                    		$sendMessage = -1;
+                    		break;
+                    	case "twitter":
+                    		$connection = new Api($this->container->getParameter('CONSUMERTWITKEY'), $this->container->getParameter('CONSUMERTWITSECRET'), $_SESSION['access_token']['oauth_token'], $_SESSION['access_token']['oauth_token_secret']);
+                    		$content = $connection->get('account/verify_credentials');
+                    		$connection->host = 'https://api.twitter.com/1.1/'; // By default library uses API version 1.
+                    		
+                    		foreach($selectedContacts as $emailid=>$tusername){                    			
+                    			// Using the senders name can cause problem do to message length restrictions (Not recommended)
+                    			//echo "Screen Name: ".$_SESSION['twt_screenname']." Name: ". $_SESSION['twt_name'];
+                    			
+                    			//Message must be less than 140 characters
+                    			//$mess = "Hey there!\n\rConnect with me in I2G Touch – a fun way to manage all your social media you already use in one super-easy-to-use place.\n\rIt’s one tool to rule them all!\n\r\n\rJoin me here (replicating website)";
+                    			//$mess = "Hey there! Connect with me in I2G Touch – a fun way to manage all your social media you already use in one super-easy-to-use place. It’s one tool to rule them all! Join me here (replicating website)";
+                    			//echo "<br/>".strlen($mess);
+                    			
+                    			//$mess = "Join me at http://qubeey.com everything you care about can find you. Social, Buisness, Personal, Fun Qubeey connects it all.";
+                    			$method = 'direct_messages/new';
+                    			$parameters = array('user_id' => $emailid, 'text' => $mess);
+                    			print_r($parameters); echo "<br/><br/>"; echo "Senders Screen Name: ".$_SESSION['twt_screenname']." Name: ". $_SESSION['twt_name'];
+                    			
+                    			//$postfriends = $connection->post($method, $parameters);
+                    		} die();
+                    		$this->_setFlash(self::FLASH_SUCCESS, 'Qubeey sent your Twitter invitaions successfully.');
+                    		break;
+                    	case "linkedin":
+                    		$linkedinapi = new Linkedinapi();
+                    		$user = $linkedinapi->fetch('GET', '/v1/people/~/connections');
+                    		//print_r($user); die();
+                    		foreach($selectedContacts as $emailid=>$lusername){
+                    			//******************************** SEND LINKEDIN MESSAGE ****************************************//
+                    			$subject= "Hello come join ".$session->get('link_name')." at qubeey.com!";
+                    			$body= "Hello ".$lusername."!  Join me at http://www.qubeey.com/".$source;
+                    			echo 'Subject: '.$subject.' <br/> Body: '.$body.'<br/><br/>';
+                    			//$postrespose =  $linkedin->sendMessageById($emailid, $ccUser=false, $subject, $body);
                     
+                    			/////////////////////////////////////////////////////////////////////////////////////////////////
+                    		} die();
+                    		$this->_setFlash(self::FLASH_SUCCESS, 'Qubeey sent your Linkedin invitaions successfully.');
+                    		break;
+                    	default:
+                    		echo "You must collect your contacts to send a message!";
+                    }
                     
-                    
-                    ////////////////////////////// faceBook //////////////////////////////////
-                    if($this->_getSessionVar(self::SVAR_PROVIDER) == 'facebook'){ $sendMessage = -1; }
-                    
-                    
-                    ////////////////////////////// Live //////////////////////////////////
-                    if($this->_getSessionVar(self::SVAR_PROVIDER) == 'hotmail'){ $sendMessage = -1; }                    
-                    
-                    ////////////////////////////// yahoo //////////////////////////////////
-                    if($this->_getSessionVar(self::SVAR_PROVIDER) == 'yahoo'){ $sendMessage = -1; }
-                    
-                    //////////////////////////////**** Twitter ****//////////////////////////////////                    
-                    if($this->_getSessionVar(self::SVAR_PROVIDER) == 'twitter'){
-                    	$connection = new Api($this->container->getParameter('CONSUMERTWITKEY'), $this->container->getParameter('CONSUMERTWITSECRET'), $_SESSION['access_token']['oauth_token'], $_SESSION['access_token']['oauth_token_secret']);
-                    	$content = $connection->get('account/verify_credentials');   
-                    	$connection->host = 'https://api.twitter.com/1.1/'; // By default library uses API version 1.
-
-                    	//Message must be less than 140 characters
-                        foreach($selectedContacts as $emailid=>$username){
-                            $mess = "Join me at http://qubeey.com everything you care about can find you. Social,Buisness,Personal,Fun Qubeey connects it all.";
-                            
-                            $method = 'direct_messages/new'; 
-                            $parameters = array('user_id' => $emailid, 'text' => $mess);
-                            print_r($parameters); echo "<br/><br/>";
-                           // $postfriends = $connection->post($method, $parameters);
-                        }
-						$this->_setFlash(self::FLASH_SUCCESS, 'Qubeey sent your Twitter invitaions successfully.');
-                    	//die();
-                   }
-                   
-                   
-                  //////////////////////////////**** Linkedin ****////////////////////////////////// 
-                   if($this->_getSessionVar(self::SVAR_PROVIDER) == 'linkedin'){
-	                 	$user = $linkedin->fetch('GET', '/v1/people/~/connections');                  
-	                  	//print_r($user); die();                  		
-	                  	foreach($selectedContacts as $emailid=>$username){        		
-		        		//*********************** SEND LINKEDIN MESSAGE *******************************//        	
-		        		$subject= "Hello come join me at qubeey.com!";
-		        		$body= "Hello ".$username."!  Join me at http://www.qubeey.com/".$source;		        		
-		        		echo 'Subject: '.$subject.' <br/> Body: '.$body.'<br/><br/>';
-		        		//$postrespose =  $linkedin->sendMessageById($emailid, $ccUser=false, $subject, $body); 
-		        		     		
-		        		/////////////////////////////////////////////////////////////////////////////////////////////////
-	        			} //die();
-	                  	$this->_setFlash(self::FLASH_SUCCESS, 'Qubeey sent your Linkedin invitaions successfully.');              			
-               		}
+               		
                   //////////////////////////////////////////////////////////////////////  
 
                     	if ($sendMessage === -1) {
@@ -1184,7 +1232,7 @@ class DefaultController extends Controller
 
 
 		    					$modelMember = new ModelMember($em, $this->get('doctrine.odm.mongodb.document_manager'), $member);
-		    					$restpass = $modelMember->addInvitation('Inviter', $category->getCategory()->getCategoryId(), json_encode($selectedContacts));
+		    					$restpass = $modelMember->addInvitation('Inviter', $source, json_encode($selectedContacts));
    
 	    			 }
 //******************************************************************************************************************************//
@@ -1198,10 +1246,10 @@ class DefaultController extends Controller
                             : 'artseld_openinviter.notification.error.invitations_with_errors'
                         );
                     } else {
-                        $this->_setFlash(self::FLASH_SUCCESS, 'artseld_openinviter.notification.success.invitations_sent');
+                        $this->_setFlash(self::FLASH_SUCCESS, 'Qubeey sent your invitaions successfully.');
                     }
                     return new RedirectResponse($this->generateUrl('artseld_openinviter_done'));
-                } echo "cant: ";  die();
+                } //echo "cant: ";  die();
 ///////////////////////////////////////////////////////////////////////////////////////////////////////                
             }
         }
