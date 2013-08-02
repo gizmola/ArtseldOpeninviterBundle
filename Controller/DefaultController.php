@@ -797,7 +797,7 @@ class DefaultController extends Controller
     	//print_r($user);
              
         //////////////////////////////////////////////////////////////////////////////////////
-       
+
         if(isset($vmo) && $vmo == 'VMO'){
         		echo "START 0</br/>";  die();
         }
@@ -948,6 +948,7 @@ class DefaultController extends Controller
         
         $request = $this->getRequest();
         $session = $request->getSession();  
+
         $source =  $request->query->get('source');
         $em = $this->getDoctrine()->getEntityManager();
         
@@ -989,9 +990,7 @@ class DefaultController extends Controller
         
         if ($user != "anon.") {
          
-         $id = $user->getMemberQid();  //var_dump($id); die();         
-         
-	        
+         $id = $user->getMemberQid();  //var_dump($id); die();                 
 	        //$ts = new \DateTime("now"); $new_time = date("Y-m-d H:m:s", strtotime('+1 hours', NOW())); print_r($new_time); die();
 	        if ($this->_getSessionVar(self::SVAR_STEP) != self::STEP_LOGIN) {
 	            $this->_clearSessionVar();
@@ -1037,7 +1036,6 @@ class DefaultController extends Controller
 	            ));
         
     	}else {
-    		
     		return $this->redirect($this->generateUrl('_login'));
     	}
     }
@@ -1217,7 +1215,6 @@ class DefaultController extends Controller
                     		echo "You must collect your contacts to send a message!";
                     }
                     
-               		
                   //////////////////////////////////////////////////////////////////////  
 
                     	if ($sendMessage === -1) {
